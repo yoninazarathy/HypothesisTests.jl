@@ -36,9 +36,42 @@ span. For a vector ``v``, write
 T(v) = \sum_{g} (t_g^3 - t_g)
 ```
 
-where ``t_g`` is the multiplicity of the ``g``-th group of equal values in ``v``. Groups
-of size one contribute nothing, so ``T(v) = 0`` exactly when ``v`` has no ties. ``T`` is
-the only function of the tie pattern either normal approximation uses.
+where ``t_g`` is the multiplicity of the ``g``-th group of equal values in ``v``. Since
+``t^3 - t = t(t-1)(t+1)``, groups of size one contribute nothing, and ``T(v) = 0`` exactly
+when ``v`` has no ties. ``T`` is the only function of the tie pattern either normal
+approximation uses.
+
+### 1.1 Where the cube comes from
+
+The cube is not a fitted constant, and ``T`` is not a correction bolted onto the
+variances: it is twelve times the amount by which ties shrink the spread of the ranks.
+
+Write ``\ell`` for the number of values being ranked — ``\ell = n`` in §2, where the
+non-zero ``|d_i|`` are ranked, and ``\ell = N`` in §3, where the pooled sample is.
+
+Midranks leave the rank *total* unchanged — ``\sum_i R_i = \ell(\ell+1)/2`` whether or not
+there are ties — which is why ties never affect the null mean of either statistic. They do
+reduce the sum of squares. A group of ``t`` tied values occupying rank positions
+``r+1, \dots, r+t`` receives the common midrank ``r + (t+1)/2``, so the deficit it creates
+is
+
+```math
+\sum_{k=1}^{t} (r+k)^2 \;-\; t\left(r + \tfrac{t+1}{2}\right)^{2}
+  = \frac{t(t+1)(2t+1)}{6} - \frac{t(t+1)^2}{4}
+  = \frac{t^3 - t}{12} ,
+```
+
+independent of ``r``: only the size of the group matters, not where it sits. Summing over
+groups,
+
+```math
+\sum_i R_i^2 = \frac{\ell(\ell+1)(2\ell+1)}{6} - \frac{T(v)}{12} ,
+\qquad
+\sum_i (R_i - \bar R)^2 = \frac{\ell(\ell^2-1)}{12} - \frac{T(v)}{12} .
+```
+
+Every appearance of ``T`` below is one of these two substituted into a variance, which is
+why it always arrives divided by ``12``, or by ``48 = 4 \times 12``.
 
 ## 2. The one-sample procedure
 
@@ -64,13 +97,22 @@ values,
 W^+ = \sum_{i \,:\, d_i > 0} R_i .
 ```
 
-Its support is ``\{0, 1, \dots, n(n+1)/2\}``. Under the null it is symmetric about
-``n(n+1)/4``, with
+Its support is ``\{0, 1, \dots, n(n+1)/2\}``, and under the null it is symmetric about
+``n(n+1)/4``.
+
+Under the null the signs are independent of ``|d|`` and each ``\pm`` with probability
+``1/2``, so conditionally on the midranks ``W^+ = \sum_i R_i B_i`` with
+``B_i \overset{\text{iid}}{\sim} \mathrm{Bernoulli}(1/2)``. Hence
+``\mathbb{E}[W^+] = \tfrac{1}{2}\sum_i R_i`` and
+``\operatorname{Var}(W^+) = \tfrac{1}{4}\sum_i R_i^2``, and substituting §1.1,
 
 ```math
 \mathbb{E}[W^+] = \frac{n(n+1)}{4}, \qquad
 \operatorname{Var}(W^+) = \frac{n(n+1)(2n+1)}{24} - \frac{T(|d|)}{48} .
 ```
+
+The mean is untouched by ties because the rank total is; the variance is not, because the
+sum of squares is not.
 
 ### 2.2 Exact null distribution, no ties
 
@@ -183,7 +225,11 @@ U = \sum_{i=1}^{n_x} R_i - \frac{n_x(n_x+1)}{2}
 The two forms are algebraically identical. The first is ``O(N \log N)`` via a sort; the
 second is the definition the inversion of §6.2 uses. The support is
 ``\{0, \tfrac{1}{2}, \dots, n_x n_y\}``, integer-valued absent ties, symmetric under the
-null about ``n_x n_y / 2``, with
+null about ``n_x n_y / 2``.
+
+Under the null the pooled midranks are fixed and the ``n_x`` of them falling to ``x`` are a
+simple random sample without replacement, so ``\sum_{i} R_i`` over that sample has variance
+``\frac{n_x n_y}{N(N-1)}\sum_i (R_i - \bar R)^2``. Substituting §1.1,
 
 ```math
 \mathbb{E}[U] = \frac{n_x n_y}{2}, \qquad
