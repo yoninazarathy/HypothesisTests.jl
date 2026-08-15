@@ -17,6 +17,10 @@ makedocs(
         "nonparametric.md",
         "time_series.md",
         "multivariate.md",
+        "Appendix: mathematical specifications" => [
+            "specs/index.md",
+            "specs/rank_tests.md",
+        ],
         "bibliography.md",
     ],
     checkdocs = :exports,

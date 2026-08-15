@@ -43,6 +43,8 @@ KruskalWallisTest
 
 ## Mann-Whitney U test
 
+→ [Mathematical specification](@ref "Rank-based location inference")
+
 ```@docs
 MannWhitneyUTest
 ExactMannWhitneyUTest
@@ -63,6 +65,8 @@ WaldWolfowitzTest
 
 ## Wilcoxon signed rank test
 
+→ [Mathematical specification](@ref "Rank-based location inference")
+
 ```@docs
 SignedRankTest
 ExactSignedRankTest
@@ -70,6 +74,8 @@ ApproximateSignedRankTest
 ```
 
 ## Rank tests: intervals and point estimates
+
+→ [Mathematical specification](@ref "Rank-based location inference")
 
 The Wilcoxon signed rank and Mann-Whitney U tests share their interval and estimator
 machinery.
