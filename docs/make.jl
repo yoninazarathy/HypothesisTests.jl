@@ -19,6 +19,7 @@ makedocs(
         "multivariate.md",
         "Appendix: mathematical specifications" => [
             "specs/index.md",
+            "specs/t_test.md",
             "specs/rank_tests.md",
         ],
         "bibliography.md",
