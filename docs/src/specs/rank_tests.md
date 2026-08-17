@@ -714,7 +714,10 @@ Both statements about what these are *not* matter in practice, because the gap s
 ordinary samples. On the one-sample data of [§8](@ref "8. Worked values for the rank tests"),
 ``\hat\theta = 9.675`` against a sample median of ``10.1``. On a tied nine-against-nine
 two-sample set, ``\hat\Delta = 0.56`` against a difference of sample medians of ``0.62``.
-Equality holds only for exactly symmetric configurations.
+Exact symmetry makes each pair agree, but the converse fails: ``d = (0, 2, 2, 7)`` is
+symmetric about nothing, and its Walsh averages
+``0, 1, 1, 2, 2, 2, 3.5, 4.5, 4.5, 7`` have median ``2``, exactly the sample median.
+Agreement on a given sample is therefore no evidence of symmetry.
 
 For either, by [§4.2](@ref "4.2 The counting identity"), the estimate is the value at which
 the statistic sits closest to its null mean ``m/2``, which is the sense in which it is the
@@ -925,9 +928,18 @@ interval, ``(V_{(1)}, V_{(m)})``, does not attain the nominal level. Its coverag
 and a ``0.99`` interval below ``n = 8``.
 
 Returning that interval as though it met the request would misstate the coverage, so this
-package returns it and warns, naming the coverage actually attained. R warns in the same
-situation. The interval is still the best available, which is why it is returned rather
-than refused.
+package returns it and warns. On the exact route the warning names the coverage that is
+attainable, as R's does.
+
+The approximate route warns for a related but weaker reason. Its index rule
+([§6.4](@ref "6.4 Normal-approximation index")) can ask for an order statistic outside the
+contrast set, which is not the same as the level being out of reach: at ``n = 8`` and
+``1-\alpha = 0.99`` the rule asks for ``k = -1`` while the exact route attains ``0.9922``
+and so meets the request. That warning therefore reports what happened, and says the exact
+route is the way on, without asserting anything about coverage the route cannot compute.
+
+Either way the interval returned is the widest the form admits, since it is the best there
+is.
 
 ## 7. Relation to other implementations
 
