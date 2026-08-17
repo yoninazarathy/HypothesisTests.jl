@@ -1,38 +1,23 @@
-HypothesisTests.jl
-===========
+# Documentation preview — not the HypothesisTests.jl documentation
 
-[![Build Status](https://travis-ci.org/JuliaStats/HypothesisTests.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/HypothesisTests.jl)
-[![Coverage Status](https://coveralls.io/repos/JuliaStats/HypothesisTests.jl/badge.svg?branch=master)](https://coveralls.io/r/JuliaStats/HypothesisTests.jl?branch=master)
-[![HypothesisTests](http://pkg.julialang.org/badges/HypothesisTests_0.5.svg)](http://pkg.julialang.org/?pkg=HypothesisTests)
-[![HypothesisTests](http://pkg.julialang.org/badges/HypothesisTests_0.6.svg)](http://pkg.julialang.org/?pkg=HypothesisTests)
+This branch of a **fork** hosts a rendered preview of the documentation as it
+stands on the rank test pull request stack, so that reviewers can read the
+mathematical specification without building the docs locally.
 
-This package implements several hypothesis tests in Julia.
+- Preview: <https://yoninazarathy.github.io/HypothesisTests.jl/>
+- Specification appendix: <https://yoninazarathy.github.io/HypothesisTests.jl/specs/>
 
-## Quick start
+The real documentation for the package is at
+<https://juliastats.org/HypothesisTests.jl/stable/>. Nothing here is official,
+released, or automatically rebuilt; it is a hand-published snapshot and will be
+stale the moment the branches move.
 
-Some examples:
+The pull requests it previews:
 
-```julia
-using HypothesisTests
+- <https://github.com/JuliaStats/HypothesisTests.jl/pull/367> — additive
+- <https://github.com/yoninazarathy/HypothesisTests.jl/pull/2> — breaking fixes
+- <https://github.com/yoninazarathy/HypothesisTests.jl/pull/3> — these docs
 
-pvalue(OneSampleTTest(x))
-pvalue(OneSampleTTest(x), tail=:left)
-pvalue(OneSampleTTest(x), tail=:right)
-confint(OneSampleTTest(x))
-confint(OneSampleTTest(x, tail=:left))
-confint(OneSampleTTest(x, tail=:right))
-OneSampleTTest(x).t
-OneSampleTTest(x).df
-
-pvalue(OneSampleTTest(x, y))
-pvalue(EqualVarianceTTest(x, y))
-pvalue(UnequalVarianceTTest(x, y))
-
-pvalue(MannWhitneyUTest(x, y))
-pvalue(SignedRankTest(x, y))
-pvalue(SignedRankTest(x))
-```
-
-## Documentation
-
-Full documentation available at [Read the Docs](http://hypothesistestsjl.readthedocs.org/en/latest/index.html).
+This branch previously held the copy of upstream's `gh-pages` inherited when the
+fork was made, at commit `29fcd58b51ac3d9ff04400198cac955c58fd1a0d`, which is
+still present upstream and can be restored from there.
