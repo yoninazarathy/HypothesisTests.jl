@@ -218,7 +218,7 @@ only when ``F`` is symmetric; an asymmetric ``F`` with median ``0`` has a pseudo
 from ``0``, and ``W^+`` follows the pseudomedian, so it is centred somewhere else and the
 test rejects more often than ``\alpha``. Take ``F`` the law of
 ``\mathrm{Exponential}(1) - \ln 2``, whose median is ``0`` and whose pseudomedian is about
-``0.145``: at ``n = 20`` the nominal ``0.05`` two-sided test rejects about ``10\%`` of the
+``0.146``: at ``n = 20`` the nominal ``0.05`` two-sided test rejects about ``10\%`` of the
 time.
 
 **Estimand.** The **pseudomedian** of ``F``: the median of ``(d + d')/2`` for independent
@@ -973,14 +973,15 @@ not about the test.
 
 ### 6.1 Form
 
-For an integer ``k \in \{0, 1, \dots, \lfloor m/2 \rfloor\}``, the two-sided interval is
+For an integer ``k \in \{0, 1, \dots, \lceil m/2 \rceil - 1\}``, the two-sided interval is
 
 ```math
 \bigl(\, V_{(k+1)}, \ V_{(m-k)} \,\bigr) ,
 ```
 
 a pair of order statistics of the pairwise estimates of [§4](@ref "4. Pairwise estimates").
-Equivalently ``(V_{(C_\alpha)}, V_{(m+1-C_\alpha)})`` with ``C_\alpha = k+1``, which is
+The range of ``k`` stops where the pair would cross: at ``k = m/2``, reachable only for
+even ``m``, the left index would exceed the right. Equivalently ``(V_{(C_\alpha)}, V_{(m+1-C_\alpha)})`` with ``C_\alpha = k+1``, which is
 the form used in most of the literature. Only the choice of ``k`` distinguishes the exact
 construction ([§6.3](@ref "6.3 Exact index")) from the approximate one
 ([§6.4](@ref "6.4 Normal-approximation index")).
@@ -1035,7 +1036,7 @@ right. Drop either and the equality goes:
     endpoints count, a distinction continuity had made idle
     ([§6.2.1](@ref "6.2.1 What happens at the endpoints")). With the endpoints included
     the interval is conservative: on ``d`` uniform on ``\{-3, \dots, 3\}`` at ``n = 15``,
-    where every sample is tied, it covers about ``0.982`` against the ``0.95209`` this
+    where essentially every sample is tied, it covers about ``0.982`` against the ``0.95209`` this
     formula gives. Excluding them, as the open interval this section derives does,
     coverage falls to about ``0.888``, *below* nominal: on data this coarse an endpoint
     lands exactly on ``\theta`` in about ``9\%`` of samples, and an open interval
@@ -1068,7 +1069,10 @@ fixed ``k``, so neither need agree with the interval about that point.
 They do not on the sample of [§8.1](@ref "8.1 One sample, no ties and no zeros"). Its exact
 ``0.95`` interval is ``(3.3, 15.5)``, and testing ``\theta`` at each endpoint gives
 ``p = 0.0493`` at ``3.3`` and ``p = 0.0496`` at ``15.5``, both rejections at ``0.05``, while
-just inside either endpoint ``p = 0.0554``. There the interval behaves as the open one, which
+just inside either endpoint ``p = 0.0554``. Replicating the ``0.0493`` needs the endpoint at
+full precision: the Walsh average printed ``3.3`` is ``3.3000000000000003``, and at a literal
+``3.3`` the shifted values that should tie in absolute value miss each other in floating
+point, giving ``0.0479`` from an untied sample instead. There the interval behaves as the open one, which
 is how [§6.1](@ref "6.1 Form") writes it.
 
 **When this matters.** Under continuous ``F`` it does not: the endpoints are pairwise
@@ -1101,7 +1105,7 @@ than it claims. On coarse data, read the endpoints as included.
 ### 6.3 Exact index
 
 ```math
-k = \max\bigl\{\, j \in \{0,\dots,\lfloor m/2 \rfloor\} \;:\; P(W \le j) < \alpha/2 \,\bigr\} ,
+k = \max\bigl\{\, j \in \{0,\dots,\lceil m/2 \rceil - 1\} \;:\; P(W \le j) < \alpha/2 \,\bigr\} ,
 ```
 
 taken as ``0`` when no such ``j`` exists, with ``P(W \le \cdot)`` the exact null CDF of
@@ -1128,7 +1132,7 @@ whereas the quantile would index outside the pairwise estimates.
     below nominal is further from it than the one immediately above.
 
 ``P(W \le j)`` is monotone in ``j``, so the condition holds on an initial segment of
-``\{0, \dots, \lfloor m/2 \rfloor\}`` and ``k`` is its last member: a binary search finds it
+``\{0, \dots, \lceil m/2 \rceil - 1\}`` and ``k`` is its last member: a binary search finds it
 without evaluating the CDF at every index, which matters because each evaluation runs a
 lattice recursion of its own.
 
@@ -1149,7 +1153,7 @@ C_\alpha = \bigl\lceil\, \mu_0 - z_{1-\alpha/2}\,\sigma - \tfrac{1}{2} \,\bigr\r
 \qquad k = C_\alpha - 1 ,
 ```
 
-clamped to ``\{0,\dots,\lfloor m/2 \rfloor\}``. In both procedures ``\mu_0 = m/2``: for
+clamped to ``\{0,\dots,\lceil m/2 \rceil - 1\}``. In both procedures ``\mu_0 = m/2``: for
 one sample ``n(n+1)/4 = m/2``, for two ``n_x n_y / 2 = m/2``.
 
 ``\sigma`` is the tie-corrected standard deviation of
@@ -1221,15 +1225,18 @@ construction it returns different endpoints, ``(-0.5, 1)`` at ``0.95`` on the sa
 construction gives ``(-0.25, 0.75)``, and its reported estimate, ``0.375`` there, is not
 the Hodges-Lehmann ``0.5`` either.
 
-**Degeneracy.** If ``P(W \le 0) \ge \alpha/2`` then ``k = 0`` and the widest available
-interval, ``(V_{(1)}, V_{(m)})``, does not attain the nominal level. Its coverage is
-``1 - 2^{1-n}`` in the untied one-sample case: ``0.75`` at ``n = 3``, ``0.875`` at
-``n = 4``, ``0.9375`` at ``n = 5``, so a ``0.95`` interval is unattainable below ``n = 6``
-and a ``0.99`` interval below ``n = 8``.
+**Degeneracy.** If ``P(W \le 0) > \alpha/2`` then no ``k`` of this form reaches the
+nominal level, and the widest available interval, ``(V_{(1)}, V_{(m)})``, falls short of
+it. Its coverage is ``1 - 2^{1-n}`` in the untied one-sample case: ``0.75`` at ``n = 3``,
+``0.875`` at ``n = 4``, ``0.9375`` at ``n = 5``, so a ``0.95`` interval is unattainable
+below ``n = 6`` and a ``0.99`` interval below ``n = 8``. At ``P(W \le 0) = \alpha/2``
+exactly there is nothing to warn about: ``k = 0`` attains the request exactly, as at
+``n = 5`` and ``1 - \alpha = 0.9375``.
 
-Returning that interval as though it met the request would misstate the coverage, so this
-package returns it and warns. On the exact route the warning names the coverage that is
-attainable, as R's does.
+Returning a short interval as though it met the request would misstate the coverage, so
+this package returns it and warns. On the exact route the warning names the coverage that
+is attainable, as R's does; for a one-sided bound it names the one-sided request and the
+one-sided attainable coverage ``1 - P(W \le 0)``, since only one tail can miss.
 
 The approximate route warns for a related but weaker reason. Its index rule
 ([§6.4](@ref "6.4 Normal-approximation index")) can ask for an order statistic outside the
@@ -1279,17 +1286,17 @@ Conformance vectors. Values are exact as printed unless a tolerance is implied b
 digits shown. The sessions are run when this page is built, so what is shown is what the
 package returns; the tables carry the quantities behind them that no printed output shows.
 
-Three labels in that printed output are the package's rather than this specification's. For
-the signed rank tests, `Wilcoxon rank-sum statistic:` is ``W^+`` of
-[§2.1](@ref "2.1 Model, estimand, statistic"), and `rank sums:` gives ``W^+`` beside the
-midranks carried by the negative observations, the two summing to ``n(n+1)/2``. For the
-Mann-Whitney tests, `parameter of interest: Location parameter (pseudomedian)` names the
-one-sample estimand, where the two-sample one is the shift ``\Delta`` of
-[§3.1](@ref "3.1 Model, estimand, statistic"). And on the approximate tests,
-`normal approximation (μ, σ):` reports the *centred* statistic of
+Two labels in that printed output need decoding. `rank sums:` on the signed rank tests
+gives ``W^+`` of [§2.1](@ref "2.1 Model, estimand, statistic") beside the midranks carried
+by the negative observations, the two summing to ``n(n+1)/2``. And on the approximate
+tests, `normal approximation (μ, σ):` reports the *centred* statistic of
 [§2.2.3](@ref "2.2.3 Normal approximation") or
 [§3.2.3](@ref "3.2.3 Normal approximation") beside the tie-corrected standard deviation,
-so its first entry is ``W^+ - n(n+1)/4`` or ``U - n_x n_y/2``, not the null mean.
+so its first entry is ``W^+ - n(n+1)/4`` or ``U - n_x n_y/2``, not the null mean. The
+other labels say what they mean: `Wilcoxon signed rank statistic:` is ``W^+`` itself, and
+the Mann-Whitney tests report as `Location shift` the ``\Delta`` of
+[§3.1](@ref "3.1 Model, estimand, statistic"), estimated by the Hodges-Lehmann median of
+[§5](@ref "5. Point estimation").
 
 ### 8.1 One sample, no ties and no zeros
 
@@ -1316,11 +1323,11 @@ Test summary:
     two-sided p-value:           0.0034
 
 Details:
-    number of observations:      15
-    non-zero observations:       15
-    Wilcoxon rank-sum statistic: 109.0
-    rank sums:                   [109.0, 11.0]
-    adjustment for ties:         0.0
+    number of observations:         15
+    non-zero observations:          15
+    Wilcoxon signed rank statistic: 109.0
+    rank sums:                      [109.0, 11.0]
+    adjustment for ties:            0.0
 
 
 julia> pvalue(t)
@@ -1389,11 +1396,11 @@ Test summary:
     two-sided p-value:           0.3072
 
 Details:
-    number of observations:      20
-    non-zero observations:       15
-    Wilcoxon rank-sum statistic: 78.5
-    rank sums:                   [78.5, 41.5]
-    adjustment for ties:         462.0
+    number of observations:         20
+    non-zero observations:          15
+    Wilcoxon signed rank statistic: 78.5
+    rank sums:                      [78.5, 41.5]
+    adjustment for ties:            462.0
 
 
 julia> pvalue(t)
@@ -1425,7 +1432,7 @@ julia> t = MannWhitneyUTest(x, y)
 Exact Mann-Whitney U test
 -------------------------
 Population details:
-    parameter of interest:   Location parameter (pseudomedian)
+    parameter of interest:   Location shift
     value under h_0:         0
     point estimate:          -5.6
     95% confidence interval: (-11.1, -0.1)
@@ -1474,7 +1481,7 @@ julia> t = MannWhitneyUTest(x, y)
 Approximate Mann-Whitney U test
 -------------------------------
 Population details:
-    parameter of interest:   Location parameter (pseudomedian)
+    parameter of interest:   Location shift
     value under h_0:         0
     point estimate:          -7.5
     95% confidence interval: (-14.0, -1.0)
