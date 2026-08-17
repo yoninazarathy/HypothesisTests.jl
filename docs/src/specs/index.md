@@ -5,11 +5,11 @@ null distribution, the p-value, and, where the test has them, the point estimate
 confidence interval.
 
 They are an appendix rather than part of the manual proper. The manual tells you what a
-function is called and what its arguments mean; a specification tells you what it computes,
-in terms that do not depend on this package or on Julia. The definitions are the published
+function is called and what its arguments mean; a specification tells you what it computes
+and the general background behind it, in terms that do not depend on this package or on
+Julia. The definitions are the published
 ones, the derivations are given rather than asserted, and the worked values closing each
-page are conformance vectors that any implementation can be held to. The mapping onto this
-package's API is confined to a single closing section.
+page are conformance vectors that any implementation can be held to.
 
 Sections are numbered so that they can be cited. §6.3 of a specification means what it
 says, and will go on meaning it.
