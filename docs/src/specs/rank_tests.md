@@ -340,26 +340,35 @@ enumeration on a large tied sample, against a p-value that is only asymptoticall
 approximate route is also the only one of the three whose distribution responds to ties
 through ``T``, since the exact routes condition on the midranks rather than summarise them.
 
-**In this package.** The tie pattern picks the exact route, and the sample size picks
-between exact and approximate:
+**In this package.** The constructor decides, and the tie pattern is the only property of
+the data that enters:
 
-  - `ExactSignedRankTest` takes [§2.2.1](@ref "2.2.1 Exact, no ties") when
-    ``T(\lvert d \rvert) = 0`` and [§2.2.2](@ref "2.2.2 Exact, ties present")
-    otherwise, and is never approximate. Past
-    [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N) ``= 25`` the
-    tied p-value is refused rather than enumerated, which `pvalue` reports as an error
-    naming ``n``. The interval is unaffected, since
-    [§6.3](@ref "6.3 Exact index") inverts the untied distribution either way.
-  - `ApproximateSignedRankTest` always takes
-    [§2.2.3](@ref "2.2.3 Normal approximation"), tied or not.
-  - `SignedRankTest` returns one of those two types: exact for ``n \le 15``, and for
-    ``n \le 50`` when ``\lvert d \rvert`` is untied; approximate above that. Ties therefore
-    lower the threshold from ``50`` to ``15``, because past there the enumeration is what
-    costs. Recall that ``n`` counts the non-zero differences, so the zeros of
-    [§2.1](@ref "2.1 Model, estimand, statistic") are discarded before the rule is applied.
-  - `method = :exact` or `:approximate` overrides the rule, and a callable, passed
-    `(; n, n_nonzero, ties, tie_adjustment)` and returning one of those two symbols, replaces
-    it with a rule of its own.
+|  | ``\lvert d \rvert`` untied | ``\lvert d \rvert`` tied |
+|:---|:---|:---|
+| `SignedRankTest(d)` | [§2.2.1](@ref "2.2.1 Exact, no ties") for ``n \le 50``, [§2.2.3](@ref "2.2.3 Normal approximation") for ``n > 50`` | [§2.2.2](@ref "2.2.2 Exact, ties present") for ``n \le 15``, [§2.2.3](@ref "2.2.3 Normal approximation") for ``n > 15`` |
+| `ExactSignedRankTest(d)` | [§2.2.1](@ref "2.2.1 Exact, no ties"), at any size | [§2.2.2](@ref "2.2.2 Exact, ties present"), up to ``n = 25`` |
+| `ApproximateSignedRankTest(d)` | [§2.2.3](@ref "2.2.3 Normal approximation") | [§2.2.3](@ref "2.2.3 Normal approximation") |
+
+Reading the first row: the normal approximation is what `SignedRankTest` falls back on when
+the sample is too large for the exact route it would otherwise take, and ties lower that size
+limit from ``50`` to ``15``, because they replace the lattice recursion with an enumeration
+costing ``2^n``. A sample of ``40`` differences therefore goes exact if untied and normal if
+any two of the ``\lvert d_i \rvert`` are equal. Here ``n`` counts the non-zero differences, so
+the zeros of [§2.1](@ref "2.1 Model, estimand, statistic") are discarded before the rule is
+applied.
+
+`method = :exact` or `method = :approximate` overrides the rule on `SignedRankTest`, and a
+callable, passed `(; n, n_nonzero, ties, tie_adjustment)` and returning one of those two
+symbols, replaces it with a rule of the caller's own.
+
+Forcing the exact route on a large tied sample is declined rather than served slowly. Beyond
+[`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N) ``= 25`` non-zero
+differences, `pvalue` on a tied `ExactSignedRankTest` throws an `ArgumentError` naming ``n``
+and pointing at `method = :approximate`, rather than starting an enumeration of ``2^n`` sign
+patterns that would not finish: ``2^{26}`` is already ``6.7 \times 10^{7}`` of them. Only the
+p-value is affected. `confint` still returns an interval, since
+[§6.3](@ref "6.3 Exact index") inverts the untied distribution whether or not the sample is
+tied.
 
 The interval follows the type rather than this rule: `Exact*` inverts the exact distribution
 ([§6.3](@ref "6.3 Exact index")) and `Approximate*` the normal one
@@ -659,16 +668,32 @@ the enumeration now over rank assignments rather than sign patterns. Write
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"): the tie pattern forces
 which exact route is available, and exact against approximate is a choice about cost.
 
-**In this package.** `ExactMannWhitneyUTest` and `ApproximateMannWhitneyUTest` fix the
-choice, `ExactMannWhitneyUTest` enumerating whenever the tie total is non-zero, and
-`MannWhitneyUTest` selects between them: exact for ``N \le 10``, and for ``N \le 50`` when
-the pooled sample is untied; approximate above that. The only difference from the one-sample
-rule is the threshold, ``N \le 10`` where the signed rank test allows ``n \le 15``, because
-the enumeration here is over assignments rather than sign patterns and grows faster. And
+**In this package.** As in
+[§2.2](@ref "2.2 Null distribution of the signed rank statistic"), the constructor decides
+and the tie pattern is the only property of the data that enters:
+
+|  | pooled sample untied | pooled sample tied |
+|:---|:---|:---|
+| `MannWhitneyUTest(x, y)` | [§3.2.1](@ref "3.2.1 Exact, no ties") for ``N \le 50``, [§3.2.3](@ref "3.2.3 Normal approximation") for ``N > 50`` | [§3.2.2](@ref "3.2.2 Exact, ties present") for ``N \le 10``, [§3.2.3](@ref "3.2.3 Normal approximation") for ``N > 10`` |
+| `ExactMannWhitneyUTest(x, y)` | [§3.2.1](@ref "3.2.1 Exact, no ties"), at any size | [§3.2.2](@ref "3.2.2 Exact, ties present"), up to ``B = 2^{25}`` |
+| `ApproximateMannWhitneyUTest(x, y)` | [§3.2.3](@ref "3.2.3 Normal approximation") | [§3.2.3](@ref "3.2.3 Normal approximation") |
+
+Again the automatic rule turns to the normal approximation once the sample outgrows its exact
+route, and ties lower the size at which that happens, here from ``N \le 50`` to ``N \le 10``.
 ``N`` counts every observation, since nothing is discarded
-([§3.1](@ref "3.1 Model, estimand, statistic")). `method` overrides the rule as it does in
+([§3.1](@ref "3.1 Model, estimand, statistic")).
+
+The two tied thresholds, ``n \le 15`` there and ``N \le 10`` here, are long-standing choices
+of this package rather than two readings of one cost target, and they are not equally strict.
+At the signed rank limit the enumeration visits ``2^{15} = 32\,768`` sign patterns; at the
+Mann-Whitney limit it visits at most ``\binom{10}{5} = 252`` assignments. The two-sample rule
+therefore turns to the approximation a good deal earlier than its own cost requires.
+
+`method` overrides the rule as it does in
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"), the callable here being
-passed `(; nx, ny, ties, tie_adjustment)`.
+passed `(; nx, ny, ties, tie_adjustment)`. Forcing the exact route is declined the same way,
+here when ``B`` exceeds ``2^{25} = 33\,554\,432`` assignments: `pvalue` throws an
+`ArgumentError` naming ``n_x`` and ``n_y``, and `confint` is again unaffected.
 
 #### 3.2.1 Exact, no ties
 
@@ -950,9 +975,12 @@ W^+(\theta) \le m-k-1 \iff \theta \ge A_{(k+1)} .
 ```
 
 The two-sided test with rejection region ``\{W^+ \le k\} \cup \{W^+ \ge m-k\}`` therefore
-fails to reject exactly on ``\bigl[A_{(k+1)},\, A_{(m-k)}\bigr)``. The interval of
-[§6.1](@ref "6.1 Form") is the closure of that set; under continuous ``F`` the endpoints
-are attained with probability zero, so the distinction does not affect coverage. Since the
+fails to reject exactly on ``\bigl[A_{(k+1)},\, A_{(m-k)}\bigr)``, for every ``\theta`` the
+derivation covers, which is every ``\theta`` that is not itself a pairwise estimate. The
+endpoints are the two values it does not cover, and
+[§6.2.1](@ref "6.2.1 What happens at the endpoints") takes them up: under continuous ``F``
+they are hit with probability zero and the question is idle, but that is a statement about
+continuous ``F`` and not about the construction. Since the
 null distribution of ``W^+`` is symmetric about ``m/2``, the two rejection tails have
 equal probability and
 
@@ -982,6 +1010,40 @@ right. Drop either and the equality goes:
 
 Both figures are Monte Carlo over ``200\,000`` samples, against ``0.95226`` for the
 continuous symmetric case that the equality describes.
+
+#### 6.2.1 What happens at the endpoints
+
+The derivation above holds for ``\theta`` that is not one of the pairwise estimates, and the
+two endpoints are pairwise estimates by construction. Whether they belong to the interval is
+therefore not settled by it, and there are two reasons not to settle it by taking a closure.
+
+At ``\theta`` equal to a pairwise estimate the half-count of
+[§4.2](@ref "4.2 The counting identity") is in force, so ``W^+(\theta)`` can take a value the
+null lattice does not carry. Worse, the sample that a procedure actually tests at that
+``\theta``, namely ``d_i - \theta``, is no longer untied: if ``\theta = (d_i + d_j)/2`` for
+``i \ne j`` then ``d_i - \theta`` and ``d_j - \theta`` are equal in absolute value and
+opposite in sign, and if ``\theta = d_i`` then ``d_i - \theta = 0``. So the p-value at exactly
+an endpoint comes from the tied conditional distribution of
+[§2.2.2](@ref "2.2.2 Exact, ties present"), or from a sample one observation shorter, rather
+than from the untied distribution the interval inverted. The two need not agree about that
+point.
+
+They do not on the sample of [§8.1](@ref "8.1 One sample, no ties and no zeros"). Its exact
+``0.95`` interval is ``(3.3, 15.5)``, and testing ``\theta`` at each endpoint gives
+``p = 0.0493`` at ``3.3`` and ``p = 0.0496`` at ``15.5``, both rejections at ``0.05``, while
+just inside either endpoint ``p = 0.0554``. There the interval behaves as the open one, which
+is how [§6.1](@ref "6.1 Form") writes it.
+
+**When this matters.** Under continuous ``F`` it does not: the endpoints are pairwise
+estimates of the observed sample, and ``\theta`` coincides with one of them with probability
+zero, so the coverage statement above is unaffected. It is discrete and coarsely recorded
+data that make the case real, since there a hypothesised value routinely coincides with an
+observed one: integer scores and counts, measurements rounded to a grid, and times recorded
+on a coarse schedule, such as a time to peak read off scheduled sampling points. On such data
+the endpoint question has positive probability, and it arrives alongside the larger effect of
+[§6.6](@ref "6.6 Zeros, ties, and degeneracy"): the exact index inverts the untied null
+distribution, so the achieved coverage is above nominal rather than equal to it. The interval
+remains conservative; it stops being exact, and the endpoints stop being immaterial.
 
 ### 6.3 Exact index
 
