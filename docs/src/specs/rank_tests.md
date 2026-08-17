@@ -1279,13 +1279,17 @@ Conformance vectors. Values are exact as printed unless a tolerance is implied b
 digits shown. The sessions are run when this page is built, so what is shown is what the
 package returns; the tables carry the quantities behind them that no printed output shows.
 
-Two labels in that printed output are the package's rather than this specification's. For
+Three labels in that printed output are the package's rather than this specification's. For
 the signed rank tests, `Wilcoxon rank-sum statistic:` is ``W^+`` of
 [§2.1](@ref "2.1 Model, estimand, statistic"), and `rank sums:` gives ``W^+`` beside the
 midranks carried by the negative observations, the two summing to ``n(n+1)/2``. For the
 Mann-Whitney tests, `parameter of interest: Location parameter (pseudomedian)` names the
 one-sample estimand, where the two-sample one is the shift ``\Delta`` of
-[§3.1](@ref "3.1 Model, estimand, statistic").
+[§3.1](@ref "3.1 Model, estimand, statistic"). And on the approximate tests,
+`normal approximation (μ, σ):` reports the *centred* statistic of
+[§2.2.3](@ref "2.2.3 Normal approximation") or
+[§3.2.3](@ref "3.2.3 Normal approximation") beside the tie-corrected standard deviation,
+so its first entry is ``W^+ - n(n+1)/4`` or ``U - n_x n_y/2``, not the null mean.
 
 ### 8.1 One sample, no ties and no zeros
 
