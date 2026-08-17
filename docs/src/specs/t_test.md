@@ -179,23 +179,62 @@ bound, so
 \text{right} \;\longrightarrow\; \bigl(\hat\delta - t_{\nu, L}\,\mathrm{SE},\; \infty\bigr) .
 ```
 
-!!! warning "This package is not internally consistent here"
-    The convention above is the one every test in this package uses except the rank tests,
-    so the t-tests, the z-tests, `BinomialTest` and `FisherExactTest`, and it is the one R
-    uses. The four Wilcoxon rank tests use the *opposite* one: their `tail = :left`
-    returns a lower bound and `tail = :right` an upper bound. See
-    [§6.5](@ref "6.5 One-sided intervals") of [Rank-based location inference](@ref). The
-    rank behaviour predates these specifications and is not changed by them.
+This is the convention R uses, under `alternative = "less"` and `"greater"`.
 
 ## 8. Worked values for the t-tests
 
-Conformance vectors, printed to six decimal places.
+Conformance vectors, printed to six decimal places. The sessions are run when this page is
+built, so what is shown is what the package returns; the tables give the intermediate
+quantities that no printed output shows. One sample serves all four tests:
 
 ``x`` = `[5.1, 4.9, 6.2, 5.8, 5.3, 6.1, 5.5, 5.9, 4.7, 6.0]`, ``n_x = 10``;
 ``y`` = `[4.8, 5.2, 4.5, 5.0, 4.9, 5.4, 4.6, 5.1]`, ``n_y = 8``.
 
+```jldoctest ttest
+julia> using HypothesisTests
+
+julia> x = [5.1, 4.9, 6.2, 5.8, 5.3, 6.1, 5.5, 5.9, 4.7, 6.0];
+
+julia> y = [4.8, 5.2, 4.5, 5.0, 4.9, 5.4, 4.6, 5.1];
+```
+
 **One sample against ``\mu_0 = 5``** ([§3](@ref "3. One-sample")). ``\bar x = 5.55``,
-``s = 0.529675``.
+``s = 0.529675``. The null value is the trailing positional argument, so a different
+``\mu_0`` is a different call rather than a different sample.
+
+```jldoctest ttest
+julia> t = OneSampleTTest(x, 5)
+One sample t-test
+-----------------
+Population details:
+    parameter of interest:   Mean
+    value under h_0:         5
+    point estimate:          5.55
+    95% confidence interval: (5.171, 5.929)
+
+Test summary:
+    outcome with 95% confidence: reject h_0
+    two-sided p-value:           0.0095
+
+Details:
+    number of observations:   10
+    t-statistic:              3.2836227276929635
+    degrees of freedom:       9
+    empirical standard error: 0.1674979270186815
+
+
+julia> pvalue(t)
+0.00947430516135569
+
+julia> pvalue(t; tail = :right)
+0.004737152580677845
+
+julia> confint(t)
+(5.171093364640838, 5.928906635359161)
+
+julia> confint(t; level = 0.90)
+(5.242957383788944, 5.857042616211055)
+```
 
 | quantity | value |
 |---|---|
@@ -207,10 +246,38 @@ Conformance vectors, printed to six decimal places.
 | interval, ``1-\alpha = 0.95`` | `(5.171093, 5.928907)` |
 | interval, ``1-\alpha = 0.90`` | `(5.242957, 5.857043)` |
 
-with ``t_{9,\,0.975} = 2.262157``.
+with ``t_{9,\,0.975} = 2.262157``. Note ``p_{\text{both}} = 2 p_{\text{right}}`` exactly,
+which [§6](@ref "6. p-values") gets from the symmetry of the ``t`` distribution and no
+clipping: unlike the rank tests, the statistic here is continuous, so a doubled tail cannot
+exceed ``1``.
 
 **Two samples, equal variances** ([§4](@ref "4. Two samples, equal variances (Student)")).
 ``\hat\delta = 0.6125``, ``s_p = 0.444673``.
+
+```jldoctest ttest
+julia> t = EqualVarianceTTest(x, y)
+Two sample t-test (equal variance)
+----------------------------------
+Population details:
+    parameter of interest:   Mean difference
+    value under h_0:         0
+    point estimate:          0.6125
+    95% confidence interval: (0.1654, 1.06)
+
+Test summary:
+    outcome with 95% confidence: reject h_0
+    two-sided p-value:           0.0104
+
+Details:
+    number of observations:   [10,8]
+    t-statistic:              2.9038471071017558
+    degrees of freedom:       16
+    empirical standard error: 0.210927083076119
+
+
+julia> confint(t)
+(0.1653545588376535, 1.0596454411623462)
+```
 
 | quantity | value |
 |---|---|
@@ -221,7 +288,33 @@ with ``t_{9,\,0.975} = 2.262157``.
 | interval, ``1-\alpha = 0.95`` | `(0.165355, 1.059645)` |
 
 **Two samples, unequal variances**
-([§5](@ref "5. Two samples, unequal variances (Welch)")). ``\hat\delta = 0.6125``.
+([§5](@ref "5. Two samples, unequal variances (Welch)")). ``\hat\delta = 0.6125``. Same
+data, and it must be asked for by name, since nothing dispatches to it.
+
+```jldoctest ttest
+julia> t = UnequalVarianceTTest(x, y)
+Two sample t-test (unequal variance)
+------------------------------------
+Population details:
+    parameter of interest:   Mean difference
+    value under h_0:         0
+    point estimate:          0.6125
+    95% confidence interval: (0.1883, 1.037)
+
+Test summary:
+    outcome with 95% confidence: reject h_0
+    two-sided p-value:           0.0077
+
+Details:
+    number of observations:   [10,8]
+    t-statistic:              3.0833130203886516
+    degrees of freedom:       14.684901529359335
+    empirical standard error: 0.19864995735100363
+
+
+julia> confint(t)
+(0.1882949619174023, 1.0367050380825973)
+```
 
 | quantity | value |
 |---|---|
@@ -236,7 +329,35 @@ interval narrower here than the Student one, because the larger sample carries t
 variance.
 
 **Paired** ([§3.1](@ref "3.1 Paired")), ``x`` against
-``z`` = `[5.0, 4.6, 6.0, 5.5, 5.1, 5.8, 5.2, 5.6, 4.4, 5.7]`.
+``z`` = `[5.0, 4.6, 6.0, 5.5, 5.1, 5.8, 5.2, 5.6, 4.4, 5.7]`. The two-argument
+`OneSampleTTest` is the paired form, so the differences never appear explicitly.
+
+```jldoctest ttest
+julia> z = [5.0, 4.6, 6.0, 5.5, 5.1, 5.8, 5.2, 5.6, 4.4, 5.7];
+
+julia> t = OneSampleTTest(x, z)
+One sample t-test
+-----------------
+Population details:
+    parameter of interest:   Mean
+    value under h_0:         0
+    point estimate:          0.26
+    95% confidence interval: (0.21, 0.31)
+
+Test summary:
+    outcome with 95% confidence: reject h_0
+    two-sided p-value:           <1e-06
+
+Details:
+    number of observations:   10
+    t-statistic:              11.75894243853277
+    degrees of freedom:       9
+    empirical standard error: 0.022110831935702693
+
+
+julia> confint(t)
+(0.20998182316122294, 0.3100181768387772)
+```
 
 | quantity | value |
 |---|---|
@@ -244,6 +365,10 @@ variance.
 | ``\nu`` | `9` |
 | ``t`` | `11.758942` |
 | interval, ``1-\alpha = 0.95`` | `(0.209982, 0.310018)` |
+
+The standard error here, `0.022111`, is far below the one-sample figure above, because
+pairing removes the between-unit variation: that is the point of
+[§3.1](@ref "3.1 Paired").
 
 ## 9. The t-tests in this package
 

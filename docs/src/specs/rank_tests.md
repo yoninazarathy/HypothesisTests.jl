@@ -12,12 +12,12 @@ Specification of two rank procedures and the location inference built on them:
 [§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)") take the two
 procedures in turn, each giving the statistic, its exact null distribution, the normal
 approximation to it, and the p-value. The location inference is then common to both: the
-contrast sets it is read off ([§4](@ref "4. Contrast sets")), the Hodges-Lehmann point
+pairwise estimates it is read off ([§4](@ref "4. Pairwise estimates")), the Hodges-Lehmann point
 estimate ([§5](@ref "5. Point estimation")), and the confidence interval obtained by
 inverting either test ([§6](@ref "6. Interval estimation")). The rest relates the
 specification to other implementations
 ([§7](@ref "7. Relation to other implementations")) and gives worked values for checking
-one ([§8](@ref "8. Worked values for the rank tests"))).
+one ([§8](@ref "8. Worked values for the rank tests")).
 
 **In this package.** The one-sample procedure is [`SignedRankTest`](@ref),
 [`ExactSignedRankTest`](@ref) and [`ApproximateSignedRankTest`](@ref); the two-sample
@@ -32,13 +32,13 @@ specification onto them and records where they depart from it.
 | ``d_1, \dots, d_N`` | the one-sample input; for paired data ``d_i = x_i - y_i`` |
 | ``n`` | the number of ``d_i`` with ``d_i \ne 0`` |
 | ``x_1, \dots, x_{n_x}``, ``y_1, \dots, y_{n_y}`` | the two-sample inputs |
-| ``N`` | the number of observations: ``N`` one-sample, ``N = n_x + n_y`` two-sample |
+| ``N`` | the total number of observations: the number of ``d_i``, zeros included, one-sample; ``n_x + n_y`` two-sample |
 | ``\alpha`` | two-sided error rate; the interval has nominal coverage ``1-\alpha`` |
 | ``z_q`` | the ``q`` quantile of the standard normal distribution |
 | ``\Phi`` | the standard normal CDF |
 | ``\ell`` | the number of values being ranked at once |
-| ``m`` | the size of the contrast set of [§4](@ref "4. Contrast sets") |
-| ``V_{(1)} \le \dots \le V_{(m)}`` | that contrast set, sorted |
+| ``m`` | the number of pairwise estimates of [§4](@ref "4. Pairwise estimates") |
+| ``V_{(1)} \le \dots \le V_{(m)}`` | those pairwise estimates, sorted |
 
 **Ranks and midranks.** Ranking always happens on a single vector of ``\ell`` values:
 the ``\ell = n`` retained ``|d_i|`` in
@@ -183,6 +183,49 @@ is the only route by which the tie pattern reaches either normal approximation.
 
 ## 2. The one-sample procedure (Wilcoxon signed rank)
 
+**Which route applies.** [§2.1](@ref "2.1 Model, estimand, statistic") defines the
+statistic and its null moments. Each of the three sections after it is then a null
+distribution for that statistic, and a p-value is read off exactly one of them for a given
+sample:
+
+| route | null distribution | applies to | cost |
+|---|---|---|---|
+| [§2.2](@ref "2.2 Exact null distribution, no ties") | exact, by a lattice recursion | untied ``\lvert d \rvert``, that is ``T(\lvert d \rvert) = 0`` | ``O(n^3)`` |
+| [§2.3](@ref "2.3 Exact null distribution, ties present") | exact, by enumerating the ``2^n`` sign patterns | tied ``\lvert d \rvert`` | ``O(2^n)`` |
+| [§2.4](@ref "2.4 Normal approximation") | the normal approximation | any sample | ``O(n)`` after the ranking |
+
+The first two are one route in substance: they differ only in how the null distribution is
+obtained, and [§2.5](@ref "2.5 p-values") reads the same three formulas off either. The
+choice between them is forced by the data. The choice between exact and approximate is not:
+it trades the cost above against a p-value that is only asymptotically right.
+
+**In this package.** The tie pattern picks the exact route, and the sample size picks
+between exact and approximate:
+
+  - `ExactSignedRankTest` takes [§2.2](@ref "2.2 Exact null distribution, no ties") when
+    ``T(\lvert d \rvert) = 0`` and [§2.3](@ref "2.3 Exact null distribution, ties present")
+    otherwise, and is never approximate. Past
+    [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N) ``= 25`` the
+    tied p-value is refused rather than enumerated, which `pvalue` reports as an error
+    naming ``n``. The interval is unaffected, since
+    [§6.3](@ref "6.3 Exact index") inverts the untied distribution either way.
+  - `ApproximateSignedRankTest` always takes
+    [§2.4](@ref "2.4 Normal approximation"), tied or not.
+  - `SignedRankTest` returns one of the two: exact for ``n \le 15``, and for
+    ``n \le 50`` when ``\lvert d \rvert`` is untied; approximate above that. Ties therefore
+    lower the threshold from ``50`` to ``15``, because past there the enumeration is what
+    costs. Recall that ``n`` counts the non-zero differences, so the zeros of
+    [§2.1](@ref "2.1 Model, estimand, statistic") are discarded before the rule is applied.
+  - `method = :exact` or `:approximate` overrides the rule, and a callable, passed
+    `(; n, n_nonzero, ties, tie_adjustment)` and returning one of those two symbols, replaces
+    it with a rule of its own.
+
+The interval is routed the same way, by the type: `Exact*` inverts the exact distribution
+([§6.3](@ref "6.3 Exact index")) and `Approximate*` the normal one
+([§6.4](@ref "6.4 Normal-approximation index")).
+[§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)") has the same
+four subsections in the same order, and the same rule with one threshold changed.
+
 ### 2.1 Model, estimand, statistic
 
 **Model.** The ``d_i`` are independent. The null hypothesis is that each is symmetric
@@ -219,11 +262,39 @@ For asymmetric ``F`` the pseudomedian is a different functional from the median,
 the pseudomedian that [§5](@ref "5. Point estimation") and
 [§6](@ref "6. Interval estimation") estimate.
 
+**Hypotheses.** The null the level is exact for is the one in the Model paragraph above, a
+statement about the whole of ``F`` rather than about a parameter:
+
+```math
+H_0 : \text{each } d_i \text{ is symmetric about } 0 .
+```
+
+Under the location model ``F(t) = F_0(t - \theta)`` with ``F_0`` symmetric about ``0``, so
+that ``\theta`` is the pseudomedian, that null reads ``\theta = 0`` and the three
+alternatives are
+
+```math
+H_1 : \theta \ne 0 \quad (\texttt{tail = :both}), \qquad
+H_1 : \theta < 0 \quad (\texttt{tail = :left}), \qquad
+H_1 : \theta > 0 \quad (\texttt{tail = :right}) ,
+```
+
+small ``W^+`` being the evidence for ``\theta < 0``. Those are the alternatives for the
+p-value; the same names select the *opposite* endpoint of the interval, which is
+[§6.5](@ref "6.5 One-sided intervals")'s warning.
+
+To test ``\theta = \theta_0`` for a value other than zero, run the procedure on
+``d_i - \theta_0``. Nothing here provides for it directly, and nothing needs to: every
+quantity below is computed from the sample it is handed, and
+[§4.2](@ref "4.2 The counting identity") is that shift written out.
+
 **Zeros.** Observations with ``d_i = 0`` are discarded before ranking; a zero has no sign
 to rank. All of [§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)") and all of
-[§4](@ref "4. Contrast sets")–[§6](@ref "6. Interval estimation") are computed from the
-``n`` retained observations. ``N`` enters nothing that is computed, so an implementation
-reporting a sample size should report both counts, or say which one it means.
+[§4](@ref "4. Pairwise estimates")–[§6](@ref "6. Interval estimation") are computed from the
+``n`` retained observations. ``N`` enters nothing this specification computes, so an
+implementation reporting a sample size should report both counts, or say which one it means.
+(This package reports both, and does compute one thing from all ``N``: see
+[§9](@ref "9. The rank tests in this package").)
 
 The discard is total. The procedure returns exactly what it would have returned had those
 observations never been recorded, so appending zeros to a sample moves neither ``W^+``, nor
@@ -254,8 +325,10 @@ W^+ = \sum_{\substack{1 \le i \le n \\ d_i > 0}} R_i ,
 ```
 
 the index running over the retained observations only. Both the ranking and the sum are
-taken after the zeros are gone, so a zero affects ``W^+`` by changing the midranks of the
-other observations, not by being skipped in the sum.
+taken after the zeros are gone, so a zero is not merely left out of the sum: it is absent
+from the ranking the sum is over, which is what makes the discard above total. Under
+Pratt's convention it would be the other way round, present in the ranking and left out of
+the sum.
 
 Its support is ``\{0, 1, \dots, n(n+1)/2\}``, and under the null it is symmetric about
 ``n(n+1)/4``.
@@ -306,9 +379,9 @@ and ``P(W^+ = w) = c_n(w) / 2^n``. Evaluating the recursion over the whole suppo
     [§9](@ref "9. The rank tests in this package") records the version from which that holds.
 
 **Implementations.** Here ``F_n`` is `StatsFuns.signrankcdf(n, w)`, with `signrankccdf`
-for the upper tail. R computes the same distribution in `psignrank`, `dsignrank` and
-`qsignrank`, C routines in its `nmath` library, which accumulate the counts ``c_n(w)`` in
-`double`: exact while they stay under ``2^{53}`` and approximate beyond, which is a
+for the upper tail. R computes the same distribution in the C routines `psignrank`,
+`dsignrank` and `qsignrank` of its `nmath` library, which accumulate the counts ``c_n(w)``
+in `double`: exact while they stay under ``2^{53}`` and approximate beyond, which is a
 different way out of the overflow above. The Julia values are tested against R's, as are
 the p-values and intervals of [§8](@ref "8. Worked values for the rank tests").
 
@@ -345,13 +418,11 @@ on them fixes nothing, and the two distributions coincide.
 Discarding zeros ([§2.1](@ref "2.1 Model, estimand, statistic")) conditions in exactly the
 same way, on which observations were non-zero, and is exact for the same reason.
 
-**Implementations.** This package computes this distribution, and reaches it often.
-`ExactSignedRankTest` enumerates whenever the tie total is non-zero, and `SignedRankTest`
-selects that test automatically for tied data up to ``n = 15``, going to the normal
-approximation above it. `method = :exact` forces the route as far as
-[`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N)`= 25`, past which
-it refuses rather than enumerate. The tied p-value of [§8](@ref "8. Worked values for the rank tests") is
-computed this way.
+**Implementations.** This package computes this distribution itself, and reaches it on the
+routing set out at the head of
+[§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)"): every tied sample it
+accepts as exact comes here. The tied p-value of
+[§8.2](@ref "8.2 One sample, five zeros and ties among the rest") is computed this way.
 
 Nothing in StatsFuns covers the tied case, and base R declines it: `wilcox.test` warns that
 it cannot compute an exact p-value with ties, or with zeros, and falls back on its normal
@@ -421,15 +492,34 @@ Degenerate cases: if ``n = 0``, meaning every difference was zero, all three exa
 The two names are one procedure, arrived at independently by
 [Wilcoxon (1945)](@cite wilcoxon1945) and [Mann and Whitney (1947)](@cite mann1947).
 Wilcoxon tabulated the rank sum ``W = \sum_{i=1}^{n_x} R_i`` itself; ``U`` subtracts its
-minimum. That minimum is ``n_x(n_x+1)/2``, since the ``n_x`` ranks going to ``x`` are
-distinct members of ``\{1, \dots, N\}`` and so total at least ``1 + 2 + \dots + n_x``,
-attained exactly when every ``x_i`` falls below every ``y_j``. Hence
-``W = U + n_x(n_x+1)/2``, a shift by a constant fixed by ``n_x`` alone and never by the
-data. Being a strictly increasing bijection, it leaves the ordering of outcomes untouched,
-so the two statistics give the same tail events, the same null distribution up to the
-shift, and the same p-value at every level. Subtracting the minimum is what turns the rank
-sum into the pair count of [§1.2](@ref "1.2 A worked ranking"), supported from ``0`` and
-readable as an estimate of ``P(X > Y)``.
+minimum. Absent ties that minimum is ``n_x(n_x+1)/2``, since the ``n_x`` ranks going to
+``x`` are then distinct members of ``\{1, \dots, N\}`` and so total at least
+``1 + 2 + \dots + n_x``, attained exactly when every ``x_i`` falls below every ``y_j``.
+Under ties it is the same number, which is easier to see from the counting form of
+[§3.1](@ref "3.1 Model, estimand, statistic"), where ``U`` counts pairs and so cannot be
+negative. Hence ``W = U + n_x(n_x+1)/2``, a shift by a constant fixed by ``n_x`` alone and
+never by the data. Being a strictly increasing bijection, it leaves the ordering of outcomes
+untouched, so the two statistics give the same tail events, the same null distribution up to
+the shift, and the same p-value at every level. Subtracting the minimum is what turns the
+rank sum into the pair count of [§1.2](@ref "1.2 A worked ranking"), supported from ``0``
+and, divided by ``n_x n_y``, an estimate of
+``P(X > Y) + \tfrac{1}{2} P(X = Y)``.
+
+**Which route applies.** As in
+[§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)"), and in the same order: the
+tie pattern chooses between the two exact routes,
+[§3.2](@ref "3.2 Exact null distribution, no ties") absent ties and
+[§3.3](@ref "3.3 Exact null distribution, ties present") under them, while
+[§3.4](@ref "3.4 Normal approximation") applies to any sample.
+`ExactMannWhitneyUTest` and `ApproximateMannWhitneyUTest` fix that choice, and
+`MannWhitneyUTest` selects: exact for ``N \le 10``, and for ``N \le 50`` when the pooled
+sample is untied; approximate above that. The only difference from the one-sample rule is
+the threshold, ``N \le 10`` where the signed rank test allows ``n \le 15``, because the
+enumeration here is over ``\binom{N}{\min(n_x, n_y)}`` assignments rather than ``2^n`` sign
+patterns. And ``N`` here counts every observation, since nothing is discarded
+([§3.1](@ref "3.1 Model, estimand, statistic")). The `method` keyword overrides the rule as
+it does in [§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)"), the callable
+here being passed `(; nx, ny, ties, tie_adjustment)`.
 
 ### 3.1 Model, estimand, statistic
 
@@ -458,11 +548,34 @@ against pseudomedian trap in [§2.1](@ref "2.1 Model, estimand, statistic"), and
 that section insists on symmetry and this one on equality.
 
 **Estimand.** Under the **shift model** ``F_x(t) = F_y(t - \Delta)``, the estimand is
-``\Delta``. Without that assumption the test is one of ``P(X > Y) = 1/2``, and
-[§5](@ref "5. Point estimation") estimates the median of ``X - Y`` for independent
-``X \sim F_x``, ``Y \sim F_y``. That quantity is not in general
-``\operatorname{median}(F_x) - \operatorname{median}(F_y)``. Zero observations carry no
+``\Delta``. Without a shift model the null tested is still equality of the two
+distributions, and what [§5](@ref "5. Point estimation") estimates is the median of
+``X - Y`` for independent ``X \sim F_x`` and ``Y \sim F_y``. That quantity is not in general
+``\operatorname{median}(F_x) - \operatorname{median}(F_y)``. The direction the test is
+sensitive to is a departure from ``P(X > Y) = 1/2``, which is not the same as that equality
+being a null it holds its level against: see the paragraph above. Zero observations carry no
 special meaning here and are not discarded.
+
+**Hypotheses.** As in [§2.1](@ref "2.1 Model, estimand, statistic"), the null the level is
+exact for is a statement about distributions,
+
+```math
+H_0 : F_x = F_y ,
+```
+
+which under the shift model ``F_x(t) = F_y(t - \Delta)`` reads ``\Delta = 0``, with
+
+```math
+H_1 : \Delta \ne 0 \quad (\texttt{tail = :both}), \qquad
+H_1 : \Delta < 0 \quad (\texttt{tail = :left}), \qquad
+H_1 : \Delta > 0 \quad (\texttt{tail = :right}) ,
+```
+
+small ``U`` being the evidence that ``x`` sits below ``y``. The endpoint naming is inverted
+for the interval in the same way, again
+[§6.5](@ref "6.5 One-sided intervals"). Testing ``\Delta = \Delta_0`` means running the
+procedure on ``x_i - \Delta_0`` against ``y``, which is the ``U(\Delta)`` of
+[§4.2](@ref "4.2 The counting identity").
 
 **Statistic.** Rank the pooled sample of size ``N``. With ``R_i`` the midrank of ``x_i``,
 
@@ -488,6 +601,32 @@ sort of the pooled sample; the second is the definition the inversion of
 [§6.2](@ref "6.2 Inversion") works with. The support is
 ``\{0, \tfrac{1}{2}, \dots, n_x n_y\}``, integer-valued absent ties, symmetric under the
 null about ``n_x n_y / 2``.
+
+**Which sample is called ``x``.** The labelling fixes the sign of what is estimated, and
+nothing else. Write ``U_x`` for the statistic above and ``U_y`` for the one obtained by
+exchanging the roles of the two samples. Every pair ``(i,j)`` is counted once between them,
+as ``x_i > y_j``, as ``y_j > x_i``, or as a tie splitting half to each, so
+
+```math
+U_x + U_y = n_x n_y
+```
+
+identically, ties included and whatever the data. Exchanging the samples therefore reflects
+the statistic through ``n_x n_y / 2``, which is exactly the centre of symmetry of its null
+distribution. So the two-sided p-value is unchanged, and the one-sided ones swap: the left
+tail of ``U_x`` is the right tail of ``U_y``. On the two-sample example of
+[§1.2](@ref "1.2 A worked ranking"), ``U_x = 6.5`` and ``U_y = 13.5``, both giving
+``p = 0.44444`` two-sided, and ``p = 0.22222`` for the left tail of the first and the right
+tail of the second. Interval and estimate follow the sign of the pairwise estimates of
+[§4](@ref "4. Pairwise estimates"): exchanging the samples negates every ``D_{ij}``, and so
+negates and reverses both, taking the interval of
+[§8.4](@ref "8.4 Two samples, ties") from ``(-14, -1)`` to ``(1, 14)``.
+
+That the two are interchangeable is what lets an implementation work with whichever is
+convenient, and this package uses the freedom: the tied enumeration of
+[§3.3](@ref "3.3 Exact null distribution, ties present") always enumerates the *smaller*
+sample, since there are fewer subsets to visit, and swaps the two tails afterwards if that
+was ``y``.
 
 Under the null the pooled midranks are fixed and the ``n_x`` of them falling to ``x`` are
 a simple random sample without replacement, so ``\sum_{i} R_i`` over that sample has
@@ -527,10 +666,10 @@ stated here is the one R uses, in the C routines `pwilcox`, `dwilcox` and `qwilc
 that the two agree is worth checking, and they do, to floating-point precision at every
 attainable ``u`` for ``n_x, n_y \le 7``.
 
-Ties are handled as in [§2.3](@ref "2.3 Exact null distribution, ties present"): by this
-package's own enumeration, which `ExactMannWhitneyUTest` reaches whenever the tie total is
-non-zero, and which `MannWhitneyUTest` selects automatically for tied data up to
-``N = 10``. Neither StatsFuns nor R offers it.
+Ties are handled as in [§2.3](@ref "2.3 Exact null distribution, ties present"), by this
+package's own enumeration, reached on the routing at the head of
+[§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)"). Neither
+StatsFuns nor R offers it.
 
 ### 3.3 Exact null distribution, ties present
 
@@ -581,12 +720,15 @@ Degenerate cases: if ``n_x = 0`` or ``n_y = 0`` there is no pair to compare, ``U
 the only attainable value, the null distribution is a point mass there, and all three exact
 p-values are ``1``. If ``\mu = \sigma = 0``, all three approximate p-values are ``1``.
 
-## 4. Contrast sets
+## 4. Pairwise estimates
 
 The two procedures differ in one place only, and this section is where that difference is
 isolated. Each forms a set of ``m`` numbers on the scale of the data, one for each pair of
-observations its statistic compares. What differs is which pairs those are, and what number
-each pair contributes:
+observations its statistic compares. Each of those numbers is, on its own, a crude estimate
+of the quantity the procedure is after: ``\theta`` from one pair of differences,
+``\Delta`` from one ``x`` against one ``y``. This specification therefore calls them the
+**pairwise estimates**. What differs between the procedures is which pairs there are, and
+what number each pair contributes:
 
   - the one-sample statistic compares every retained observation with every other and with
     itself, giving the ``m = n(n+1)/2`` pairs ``i \le j`` of a single sample, each
@@ -599,11 +741,11 @@ each pair contributes:
 stated twice for a substantive reason. Everything after them is a statement about a set of
 ``m`` numbers: sort them as ``V_{(1)} \le \dots \le V_{(m)}``, and the estimate of
 [§5](@ref "5. Point estimation") is their sample median while the interval endpoints of
-[§6](@ref "6. Interval estimation") are two of their order statistics. This specification
-calls the numbers themselves the **contrasts**.
+[§6](@ref "6. Interval estimation") are two of their order statistics. Pooling ``m`` crude
+estimates by taking their median is the whole of what the procedure does with them.
 
-Note which median that is. The median of the ``m`` contrasts is a number computed from the
-data, and it is the estimator; the pseudomedian of
+Note which median that is. The median of the ``m`` pairwise estimates is a number computed
+from the data, and it is the estimator; the pseudomedian of
 [§2.1](@ref "2.1 Model, estimand, statistic") and the shift of
 [§3.1](@ref "3.1 Model, estimand, statistic") are the population quantities being
 estimated. They are not the same object, and neither is the sample median of the data
@@ -611,8 +753,8 @@ itself. [§5](@ref "5. Point estimation") keeps the three apart.
 
 The common treatment rests on the identity of
 [§4.2](@ref "4.2 The counting identity"): for both procedures the statistic, recomputed
-against a hypothesised location, counts how many contrasts lie above it. Inverting either
-test is therefore counting contrasts, and it is the only property
+against a hypothesised location, counts how many pairwise estimates lie above it. Inverting
+either test is therefore counting them, and that is the only property
 [§5](@ref "5. Point estimation") and [§6](@ref "6. Interval estimation") use.
 
 The notation below nevertheless stays doubled, because the two statistics keep their own
@@ -622,11 +764,11 @@ each of them to the two-sample case. No step of any argument changes under that
 substitution. Reading the one-sample line and applying the substitution is enough; the two
 are not being developed independently.
 
-The word **contrast** is a convenience of this document rather than established usage. The
-one-sample contrasts are normally called the Walsh averages and the two-sample ones simply
-the differences, and no standard term covers both. This is also not the
-analysis-of-variance sense of *contrast*: the one-sample contrasts are averages of pairs,
-whose coefficients sum to one rather than to zero.
+The term **pairwise estimates** is a convenience of this document rather than established
+usage. The one-sample ones are normally called the Walsh averages and the two-sample ones
+simply the differences, and no standard term covers both. Where the literature does name the
+common idea it speaks of *elementary estimates*, the same thing: one estimate per pair,
+combined by taking a median.
 
 ### 4.1 Definitions
 
@@ -668,11 +810,11 @@ U(\Delta) = \#\{(i,j) : D_{ij} > \Delta\} + \tfrac{1}{2}\,\#\{(i,j) : D_{ij} = \
 ```
 
 The half-count is the midrank convention, and it vanishes whenever ``\theta`` is not
-itself a member of the contrast set, which is almost surely the case under continuous
+itself one of the pairwise estimates, which is almost surely the case under continuous
 ``F`` and is the only case [§6.2](@ref "6.2 Inversion") needs. Both functions are
-non-increasing in their argument and change value only at members of the contrast set.
+non-increasing in their argument and change value only at pairwise estimates.
 
-*Proof of the first, for ``\theta`` not a contrast and ``|d|`` untied.*
+*Proof of the first, for ``\theta`` not itself a pairwise estimate and ``|d|`` untied.*
 ``R_i = \#\{j : |d_j| \le |d_i|\}``, so
 ``W^+ = \sum_{i : d_i > 0} \#\{j : |d_j| \le |d_i|\}``. A pair ``\{i, j\}`` is counted
 exactly when the one with the larger absolute value is positive, which is exactly when
@@ -682,12 +824,12 @@ counting form of ``U`` in [§3.1](@ref "3.1 Model, estimand, statistic"). ∎
 
 Everything in [§5](@ref "5. Point estimation") and [§6](@ref "6. Interval estimation") is
 a consequence of this identity. It is the reason the estimator and the interval are
-functions of the contrast set and not of the ranks.
+functions of the pairwise estimates and not of the ranks.
 
 ## 5. Point estimation
 
-The **Hodges-Lehmann estimator** [hodges1963](@cite) is the sample median of the contrast
-set of [§4.1](@ref "4.1 Definitions"). The two cases in turn.
+The **Hodges-Lehmann estimator** [hodges1963](@cite) is the sample median of the pairwise
+estimates of [§4.1](@ref "4.1 Definitions"). The two cases in turn.
 
 **One sample.** The median of the ``n(n+1)/2`` Walsh averages,
 
@@ -714,16 +856,16 @@ Both statements about what these are *not* matter in practice, because the gap s
 ordinary samples. On the one-sample data of [§8](@ref "8. Worked values for the rank tests"),
 ``\hat\theta = 9.675`` against a sample median of ``10.1``. On a tied nine-against-nine
 two-sample set, ``\hat\Delta = 0.56`` against a difference of sample medians of ``0.62``.
-Exact symmetry makes each pair agree, but the converse fails: ``d = (0, 2, 2, 7)`` is
-symmetric about nothing, and its Walsh averages
-``0, 1, 1, 2, 2, 2, 3.5, 4.5, 4.5, 7`` have median ``2``, exactly the sample median.
+Exact symmetry makes each pair agree, but the converse fails: ``d = (1, 3, 3, 8)`` is
+symmetric about nothing, and its ten Walsh averages
+``1, 2, 2, 3, 3, 3, 4.5, 5.5, 5.5, 8`` have median ``3``, exactly the sample median.
 Agreement on a given sample is therefore no evidence of symmetry.
 
 For either, by [§4.2](@ref "4.2 The counting identity"), the estimate is the value at which
 the statistic sits closest to its null mean ``m/2``, which is the sense in which it is the
 estimator the test induces. For even ``m`` the median is taken as the mean of
-``V_{(m/2)}`` and ``V_{(m/2+1)}``, so the estimate need not be a member of the contrast
-set.
+``V_{(m/2)}`` and ``V_{(m/2+1)}``, so the estimate need not itself be one of
+them.
 
 **Changing scale.** Shifting and stretching the data does the same to the estimate: from
 ``a d + b`` with ``a > 0`` the estimator returns ``a \hat\theta + b``. Anything more than
@@ -747,7 +889,7 @@ For an integer ``k \in \{0, 1, \dots, \lfloor m/2 \rfloor\}``, the two-sided int
 \bigl(\, V_{(k+1)}, \ V_{(m-k)} \,\bigr) ,
 ```
 
-a pair of order statistics of the contrast set of [§4](@ref "4. Contrast sets").
+a pair of order statistics of the pairwise estimates of [§4](@ref "4. Pairwise estimates").
 Equivalently ``(V_{(C_\alpha)}, V_{(m+1-C_\alpha)})`` with ``C_\alpha = k+1``, which is
 the form used in most of the literature. Only the choice of ``k`` distinguishes the exact
 construction ([§6.3](@ref "6.3 Exact index")) from the approximate one
@@ -767,7 +909,7 @@ and 68–75.
 
 Take the one-sample case; the two-sample case is identical with ``U``, ``D`` and
 ``\Delta`` throughout. By [§4.2](@ref "4.2 The counting identity"), taking ``\theta`` not
-itself a contrast so that the half-count vanishes, ``W^+(\theta) = \#\{A_{ij} > \theta\}``,
+itself a pairwise estimate so that the half-count vanishes, ``W^+(\theta) = \#\{A_{ij} > \theta\}``,
 so ``\#\{A_{ij} \le \theta\} = m - W^+(\theta)`` and
 
 ```math
@@ -792,7 +934,7 @@ value between two of them.
 
 **That is an equality, and only under this section's assumptions.** It is exact, not a
 bound, when ``F`` is continuous and symmetric about ``\theta``: continuity is what makes
-``\theta`` almost surely not a contrast and the ``|d_i - \theta|`` almost surely untied, and
+``\theta`` almost surely not a pairwise estimate and the ``|d_i - \theta|`` almost surely untied, and
 symmetry is what gives ``W^+(\theta)`` the null distribution whose tails appear on the
 right. Drop either and the equality goes:
 
@@ -830,7 +972,7 @@ quantile of the null distribution, whenever that minimum is at least ``1``. Wher
 ``0``, which is the degenerate case of
 [§6.6](@ref "6.6 Zeros, ties, and degeneracy"), the two disagree: the convention above
 gives ``k = 0`` and so ``C_\alpha = 1``, which is the widest interval this form admits,
-whereas the quantile would index outside the contrast set.
+whereas the quantile would index outside the pairwise estimates.
 
 !!! note "This is a choice"
     The alternative is to take the attainable coverage *closest* to ``1-\alpha``, which
@@ -889,27 +1031,14 @@ at level ``2L - 1``; that is, the two-sided ``\alpha`` used is ``2(1-L)`` rather
 \bigl(V_{(k+1)},\, \infty\bigr) \quad\text{or}\quad \bigl(-\infty,\, V_{(m-k)}\bigr) .
 ```
 
-!!! warning "This package is not internally consistent here"
-    Which of the two a given tail selects is a naming convention, not mathematics, and
-    this package does not apply one convention throughout. Its four rank tests return
-    ``(V_{(k+1)}, \infty)``, a *lower* bound, for `tail = :left`, and the upper bound
-    for `tail = :right`. Every other test here that accepts a `tail` does the opposite,
-    returning an upper bound for `tail = :left`: the three t-tests, the z-tests,
-    `BinomialTest` and `FisherExactTest`. That is also what R does, for `t.test`,
-    `wilcox.test` and `binom.test` alike, under `alternative = "less"`. See
-    [§7.1](@ref "7.1 One-sided intervals") of [The t-tests](@ref).
-
-    The rank behaviour predates these specifications and is not changed by them.
-    Reconciling the two is a breaking change to whichever side moves.
-
 ### 6.6 Zeros, ties, and degeneracy
 
 **Zeros.** By [§2.1](@ref "2.1 Model, estimand, statistic") the one-sample statistic is
-computed from the ``n`` non-zero differences. The contrast set must be formed from the
-same ``n`` observations, or the p-value and the interval describe different samples. For a
-20-point sample containing five zeros the contrast set has 120 members
+computed from the ``n`` non-zero differences. The pairwise estimates must be formed from
+the same ``n`` observations, or the p-value and the interval describe different samples. For a
+20-point sample containing five zeros there are 120 pairwise estimates
 (``m = n(n+1)/2`` with ``n = 15``), not 210 (which is ``N(N+1)/2`` with ``N = 20``, the
-count obtained by retaining the zeros). If every difference is zero, every contrast is zero
+count obtained by retaining the zeros). If every difference is zero, every pairwise estimate is zero
 and the interval degenerates to the point ``0``.
 
 **Ties on the exact route.** [§6.3](@ref "6.3 Exact index") inverts the untied null
@@ -934,7 +1063,7 @@ attainable, as R's does.
 
 The approximate route warns for a related but weaker reason. Its index rule
 ([§6.4](@ref "6.4 Normal-approximation index")) can ask for an order statistic outside the
-contrast set, which is not the same as the level being out of reach: at ``n = 8`` and
+pairwise estimates, which is not the same as the level being out of reach: at ``n = 8`` and
 ``1-\alpha = 0.99`` the rule asks for ``k = -1`` while the exact route attains ``0.9922``
 and so meets the request. That warning therefore reports what happened, and says the exact
 route is the way on, without asserting anything about coverage the route cannot compute.
@@ -952,11 +1081,11 @@ Three deliberate differences. The first two concern its approximate route:
 
   - It does not return order statistics. It solves numerically, with `uniroot`, for the
     shift at which the statistic crosses its critical value, so its endpoints lie near a
-    contrast without being one: `3.0500354` where
+    pairwise estimate without being one: `3.0500354` where
     [§6.4](@ref "6.4 Normal-approximation index") gives `3.05`.
   - It continuity-corrects the interval, as
     [§6.4](@ref "6.4 Normal-approximation index") does, but not the point estimate, which
-    it also root-finds rather than taking as the median of the contrast set. Its reported
+    it also root-finds rather than taking as the median of the pairwise estimates. Its reported
     estimate therefore drifts from ``\hat\theta``: `9.71184` against `9.675` on the sample
     of [§8](@ref "8. Worked values for the rank tests").
   - Under ties it declines an exact interval entirely and falls back to its approximate
@@ -973,7 +1102,16 @@ the two implementations may be running different constructions.
 ## 8. Worked values for the rank tests
 
 Conformance vectors. Values are exact as printed unless a tolerance is implied by the
-digits shown.
+digits shown. The sessions are run when this page is built, so what is shown is what the
+package returns; the tables carry the quantities behind them that no printed output shows.
+
+Two labels in that printed output are the package's rather than this specification's. For
+the signed rank tests, `Wilcoxon rank-sum statistic:` is ``W^+`` of
+[§2.1](@ref "2.1 Model, estimand, statistic"), and `rank sums:` gives ``W^+`` beside the
+midranks carried by the negative observations, the two summing to ``n(n+1)/2``. For the
+Mann-Whitney tests, `parameter of interest: Location parameter (pseudomedian)` names the
+one-sample estimand, where the two-sample one is the shift ``\Delta`` of
+[§3.1](@ref "3.1 Model, estimand, statistic").
 
 ### 8.1 One sample, no ties and no zeros
 
@@ -981,45 +1119,207 @@ digits shown.
 `[-7.8, -6.9, -4.7, 3.7, 6.5, 8.7, 9.1, 10.1, 10.8, 13.6, 14.4, 16.6, 20.2, 22.4, 23.5]`,
 ``m = 120``.
 
+```jldoctest rank1
+julia> using HypothesisTests
+
+julia> d = [-7.8, -6.9, -4.7, 3.7, 6.5, 8.7, 9.1, 10.1, 10.8, 13.6, 14.4, 16.6, 20.2, 22.4, 23.5];
+
+julia> t = SignedRankTest(d)
+Exact Wilcoxon signed rank test
+-------------------------------
+Population details:
+    parameter of interest:   Location parameter (pseudomedian)
+    value under h_0:         0
+    point estimate:          9.675
+    95% confidence interval: (3.3, 15.5)
+
+Test summary:
+    outcome with 95% confidence: reject h_0
+    two-sided p-value:           0.0034
+
+Details:
+    number of observations:      15
+    non-zero observations:       15
+    Wilcoxon rank-sum statistic: 109.0
+    rank sums:                   [109.0, 11.0]
+    adjustment for ties:         0.0
+
+
+julia> pvalue(t)
+0.00335693359375
+
+julia> hodgeslehmann(t)
+9.675
+
+julia> confint(t)
+(3.3000000000000003, 15.5)
+
+julia> confint(t; level = 0.90)
+(4.449999999999999, 14.45)
+
+julia> confint(t; level = 0.95, tail = :left)
+(4.449999999999999, Inf)
+
+julia> confint(ApproximateSignedRankTest(d))
+(3.0500000000000003, 15.5)
+```
+
+The summary rounds the endpoints; `confint` returns them as computed, which is why the
+tables below and the tests in this package compare to a tolerance.
+
 | quantity | value |
 |---|---|
 | ``\hat\theta`` ([§5](@ref "5. Point estimation")) | `9.675` |
-| median of ``d``, for contrast | `10.1` |
-| exact, ``1-\alpha = 0.95`` ([§6.3](@ref "6.3 Exact index")) | ``k = 25``, ``C_\alpha = 26``, `(3.3, 15.5)` |
+| median of ``d``, for comparison | `10.1` |
+| exact index ([§6.3](@ref "6.3 Exact index")) at ``1-\alpha = 0.95`` | ``k = 25``, ``C_\alpha = 26`` |
 | attained coverage | `0.95209`; at ``k=26`` it is `0.94464` |
-| approximate, ``1-\alpha = 0.95`` ([§6.4](@ref "6.4 Normal-approximation index")) | ``\sigma = 17.60682``, ``C_\alpha = 25``, `(3.05, 15.5)` |
-| exact, ``1-\alpha = 0.90`` | `(4.45, 14.45)` |
-| exact, one-sided lower, ``L = 0.95`` ([§6.5](@ref "6.5 One-sided intervals")) | `4.45` |
+| approximate index ([§6.4](@ref "6.4 Normal-approximation index")) at ``1-\alpha = 0.95`` | ``\sigma = 17.60682``, ``C_\alpha = 25`` |
 
-The last two rows illustrate [§6.5](@ref "6.5 One-sided intervals"): the one-sided bound
-at ``0.95`` is the lower endpoint of the two-sided interval at ``0.90``.
+The last two calls illustrate [§6.5](@ref "6.5 One-sided intervals"): the one-sided bound at
+``0.95`` is the lower endpoint of the two-sided interval at ``0.90``, and the approximate
+route moves the lower endpoint one order statistic outwards, from ``V_{(26)} = 3.3`` to
+``V_{(25)} = 3.05``.
 
 ### 8.2 One sample, five zeros and ties among the rest
 
 ``N = 20``, ``d`` = `[0, 0, 0, 0.5, 0.5, 1, -0.5, -1, 1.5, -1.5, 0.5, 0, 1, -0.5, 2, 0, 0.5, -1, 1, 0.5]`,
-so ``n = 15`` and ``T(|d|) = 462``.
+so ``n = 15`` and ``T(|d|) = 462``. Both counts are reported, as
+[§2.1](@ref "2.1 Model, estimand, statistic") asks, and it is ``n = 15`` that everything is
+computed from.
+
+```jldoctest rank2
+julia> using HypothesisTests
+
+julia> d = [0, 0, 0, 0.5, 0.5, 1, -0.5, -1, 1.5, -1.5, 0.5, 0, 1, -0.5, 2, 0, 0.5, -1, 1, 0.5];
+
+julia> t = SignedRankTest(d)
+Exact Wilcoxon signed rank test
+-------------------------------
+Population details:
+    parameter of interest:   Location parameter (pseudomedian)
+    value under h_0:         0
+    point estimate:          0.5
+    95% confidence interval: (-0.25, 0.75)
+
+Test summary:
+    outcome with 95% confidence: fail to reject h_0
+    two-sided p-value:           0.3072
+
+Details:
+    number of observations:      20
+    non-zero observations:       15
+    Wilcoxon rank-sum statistic: 78.5
+    rank sums:                   [78.5, 41.5]
+    adjustment for ties:         462.0
+
+
+julia> pvalue(t)
+0.30718994140625
+
+julia> confint(t; level = 0.90)
+(-0.25, 0.75)
+
+julia> length(HypothesisTests.walsh_averages(filter(!iszero, d)))
+120
+```
 
 | quantity | value |
 |---|---|
 | ``\hat\theta`` | `0.5` |
-| contrast set size ([§6.6](@ref "6.6 Zeros, ties, and degeneracy")) | `120` = ``15 \cdot 16 / 2``, against `210` = ``20 \cdot 21 / 2`` if zeros were retained |
-| exact, ``1-\alpha = 0.90`` | `(-0.25, 0.75)` |
-| two-sided p-value ([§2.5](@ref "2.5 p-values"), tied branch) | `0.30719` |
+| number of pairwise estimates ([§6.6](@ref "6.6 Zeros, ties, and degeneracy")) | `120` = ``15 \cdot 16 / 2``, against `210` = ``20 \cdot 21 / 2`` if zeros were retained |
+| two-sided p-value ([§2.5](@ref "2.5 p-values"), tied branch) | `0.30719`, by the enumeration of [§2.3](@ref "2.3 Exact null distribution, ties present") |
 
 ### 8.3 Two samples, no ties
 
 ``x`` = `1:10`, ``y`` = `2.1, 4.1, …, 20.1`; ``m = 100``, ``U = 20``.
 
+```jldoctest rank3
+julia> using HypothesisTests
+
+julia> x = collect(1.0:10.0); y = collect(2.1:2.0:20.1);
+
+julia> t = MannWhitneyUTest(x, y)
+Exact Mann-Whitney U test
+-------------------------
+Population details:
+    parameter of interest:   Location parameter (pseudomedian)
+    value under h_0:         0
+    point estimate:          -5.6
+    95% confidence interval: (-11.1, -0.1)
+
+Test summary:
+    outcome with 95% confidence: reject h_0
+    two-sided p-value:           0.0232
+
+Details:
+    number of observations in each group: [10, 10]
+    Mann-Whitney-U statistic:             20.0
+    rank sums:                            [75.0, 135.0]
+    adjustment for ties:                  0.0
+
+
+julia> pvalue(t)
+0.02323063932971052
+
+julia> hodgeslehmann(t)
+-5.6
+
+julia> confint(t)
+(-11.1, -0.09999999999999964)
+```
+
 | quantity | value |
 |---|---|
 | ``\hat\Delta`` | `-5.6` |
-| exact, ``1-\alpha = 0.95`` | ``k = 23``, ``C_\alpha = 24``, `(-11.1, -0.1)` |
+| exact index at ``1-\alpha = 0.95`` | ``k = 23``, ``C_\alpha = 24`` |
 | ``P(U \le 23)``, ``P(U \le 24)`` | `0.021629`, `0.026213` |
 | attained coverage | `0.95674` |
 
 ### 8.4 Two samples, ties
 
-``x`` = `1:10`, ``y`` = `2, 4, …, 24`. Exact at ``0.95``: `(-14.0, -1.0)`.
+``x`` = `1:10`, ``y`` = `2, 4, …, 24`, so ``N = 22`` and five values are tied across the
+samples. Here ``N > 10``, so the routing of
+[§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)") sends tied data
+this size to the approximate test, and `method = :exact` is what reaches the exact one.
+
+```jldoctest rank4
+julia> using HypothesisTests
+
+julia> x = collect(1.0:10.0); y = collect(2.0:2.0:24.0);
+
+julia> t = MannWhitneyUTest(x, y)
+Approximate Mann-Whitney U test
+-------------------------------
+Population details:
+    parameter of interest:   Location parameter (pseudomedian)
+    value under h_0:         0
+    point estimate:          -7.5
+    95% confidence interval: (-14.0, -1.0)
+
+Test summary:
+    outcome with 95% confidence: reject h_0
+    two-sided p-value:           0.0146
+
+Details:
+    number of observations in each group: [10, 12]
+    Mann-Whitney-U statistic:             22.5
+    rank sums:                            [77.5, 175.5]
+    adjustment for ties:                  30.0
+    normal approximation (μ, σ):          (-37.5, 15.1443)
+
+
+julia> confint(MannWhitneyUTest(x, y; method = :exact))
+(-14.0, -1.0)
+
+julia> confint(MannWhitneyUTest(y, x; method = :exact))
+(1.0, 14.0)
+```
+
+On this sample the two routes agree: the normal index lands on the same pair of order
+statistics, which is the behaviour [§7](@ref "7. Relation to other implementations") reports
+of R as well. The last call is the sample exchange of
+[§3.1](@ref "3.1 Model, estimand, statistic"): the interval negates and reverses, and the
+two-sided p-value does not move.
 
 ## 9. The rank tests in this package
 
@@ -1029,7 +1329,10 @@ The one-sample procedure is [`SignedRankTest`](@ref), [`ExactSignedRankTest`](@r
 [`ApproximateMannWhitneyUTest`](@ref). The `Exact*` types implement
 [§6.3](@ref "6.3 Exact index"), the `Approximate*` types
 [§6.4](@ref "6.4 Normal-approximation index"), and the dispatchers select between them by
-sample size and tie pattern unless the `method` keyword says otherwise.
+sample size and tie pattern unless the `method` keyword says otherwise. The two selection
+rules are stated in full at the head of
+[§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)") and
+[§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)").
 
 `pvalue` implements [§2.5](@ref "2.5 p-values") and [§3.5](@ref "3.5 p-values"), `confint`
 implements [§6](@ref "6. Interval estimation"), and [`hodgeslehmann`](@ref) implements
@@ -1049,12 +1352,15 @@ Departures from the specification, recorded here because
 Every test here carries a `median` field, the sample
 median for the signed rank tests and the difference of sample medians for the Mann-Whitney
 ones. Both are descriptive statistics rather than the estimand of
-[§5](@ref "5. Point estimation"), and that field, rather than anything the procedure needs,
+[§5](@ref "5. Point estimation"). The signed rank one is taken over all ``N`` differences,
+zeros included, which makes it the one number these tests report that the discard of
+[§2.1](@ref "2.1 Model, estimand, statistic") does not reach. That field, rather than
+anything the procedure needs,
 is what makes an empty sample throw instead of returning the degenerate p-value of
-[§3.5](@ref "3.5 p-values"). And the contrast set is materialised as written in
+[§3.5](@ref "3.5 p-values"). And the pairwise estimates are materialised as written in
 [§4.1](@ref "4.1 Definitions") rather than computed by selection as that section
 describes, which bounds the usable sample size; the
-bound is [`MAX_RANK_CONTRASTS`](@ref HypothesisTests.MAX_RANK_CONTRASTS), and the tied
+bound is [`MAX_PAIRWISE_ESTIMATES`](@ref HypothesisTests.MAX_PAIRWISE_ESTIMATES), and the tied
 enumerations of [§2.3](@ref "2.3 Exact null distribution, ties present") and
 [§3.3](@ref "3.3 Exact null distribution, ties present") are bounded by
 [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N).
