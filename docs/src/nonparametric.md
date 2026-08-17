@@ -43,7 +43,7 @@ KruskalWallisTest
 
 ## Mann-Whitney U test
 
-→ [Mathematical specification](@ref "Rank-based location inference")
+→ [Mathematical specification](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)")
 
 ```@docs
 MannWhitneyUTest
@@ -65,7 +65,7 @@ WaldWolfowitzTest
 
 ## Wilcoxon signed rank test
 
-→ [Mathematical specification](@ref "Rank-based location inference")
+→ [Mathematical specification](@ref "2. The one-sample procedure (Wilcoxon signed rank)")
 
 ```@docs
 SignedRankTest

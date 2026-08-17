@@ -7,12 +7,18 @@ Specification of three procedures for inference on means:
   - the **two-sample t-test assuming equal variances**, Student's;
   - the **two-sample t-test not assuming equal variances**, Welch's.
 
-All three share their p-value (§6) and their confidence interval (§7); they differ only in
-what the estimate, the standard error, and the degrees of freedom are (§3–§5). §8 gives
-worked values for checking an implementation, and §9 maps the specification onto this
-package.
+All three share their p-value ([§6](@ref "6. p-values")) and their confidence interval
+([§7](@ref "7. Confidence interval")); they differ only in what the estimate, the standard
+error, and the degrees of freedom are
+([§3](@ref "3. One-sample")–[§5](@ref "5. Two samples, unequal variances (Welch)")).
+[§8](@ref "8. Worked values") gives worked values for checking an implementation.
 
-## 1. Notation
+**In this package.** The one-sample test, and its paired form, is
+[`OneSampleTTest`](@ref); the two-sample tests are [`EqualVarianceTTest`](@ref) and
+[`UnequalVarianceTTest`](@ref). [§9](@ref "9. In this package") maps the specification
+onto them and records where they depart from it.
+
+## 1. Preliminaries and notation
 
 | | |
 |---|---|
@@ -49,17 +55,17 @@ corresponding sample mean, and no distinction between the two arises.
 
 | test | assumes |
 |---|---|
-| one-sample (§3) | normality of the ``x_i`` |
-| paired (§3.1) | normality of the *differences*, not of either sample |
-| Student (§4) | normality of both samples, and ``\sigma_x^2 = \sigma_y^2`` |
-| Welch (§5) | normality of both samples |
+| one-sample ([§3](@ref "3. One-sample")) | normality of the ``x_i`` |
+| paired ([§3.1](@ref "3.1 Paired")) | normality of the *differences*, not of either sample |
+| Student ([§4](@ref "4. Two samples, equal variances (Student)")) | normality of both samples, and ``\sigma_x^2 = \sigma_y^2`` |
+| Welch ([§5](@ref "5. Two samples, unequal variances (Welch)")) | normality of both samples |
 
 Normality matters less than it appears: by the central limit theorem the distribution of
 ``\hat\delta`` approaches normality as the sample grows, and the ``t`` reference
 distribution approaches the normal, so the test is asymptotically valid for any
 distribution with finite variance. What does not wash out is dependence between
-observations, and, for §4, a difference in variances when the samples are also of
-different sizes.
+observations, and, for [§4](@ref "4. Two samples, equal variances (Student)"), a
+difference in variances when the samples are also of different sizes.
 
 ## 3. One-sample
 
@@ -74,12 +80,14 @@ Under the null, ``t \sim T_{n-1}`` exactly when the ``x_i`` are normal.
 
 ### 3.1 Paired
 
-The paired test is not a separate procedure: it is §3 applied to the differences
-``d_i = x_i - y_i``, which requires the two inputs to be of equal length and in
-corresponding order. Since ``\overline{x-y} = \bar x - \bar y``, the estimate agrees with
-the two-sample one; the standard error does not, because pairing removes the
-between-subject variance from it. Pairing is a property of the data, not a choice: applying
-§4 or §5 to paired data discards the pairing and inflates the standard error.
+The paired test is not a separate procedure: it is [§3](@ref "3. One-sample") applied to
+the differences ``d_i = x_i - y_i``, which requires the two inputs to be of equal length
+and in corresponding order. Since ``\overline{x-y} = \bar x - \bar y``, the estimate
+agrees with the two-sample one; the standard error does not, because pairing removes the
+between-subject variance from it. Pairing is a property of the data, not a choice:
+applying [§4](@ref "4. Two samples, equal variances (Student)") or
+[§5](@ref "5. Two samples, unequal variances (Welch)") to paired data discards the pairing
+and inflates the standard error.
 
 ## 4. Two samples, equal variances (Student)
 
@@ -155,7 +163,7 @@ Since ``t`` is monotone in ``\mu_0``, that set is the interval
 ```
 
 symmetric about the estimate and independent of ``\mu_0``. Its coverage is exact under the
-model, with no discreteness penalty — unlike the rank intervals, which can only attain a
+model, with no discreteness penalty, unlike the rank intervals, which can only attain a
 finite set of levels.
 
 ### 7.1 One-sided intervals
@@ -174,18 +182,19 @@ bound, so
 !!! warning "This package is not internally consistent here"
     The convention above is the one this package's t-tests and `BinomialTest` use, and the
     one R uses. The Wilcoxon rank tests use the *opposite* one: their `tail = :left`
-    returns a lower bound and `tail = :right` an upper bound. See §6.5 of
-    [Rank-based location inference](@ref). The rank behaviour predates these
-    specifications and is not changed by them.
+    returns a lower bound and `tail = :right` an upper bound. See
+    [§6.5](@ref "6.5 One-sided intervals") of [Rank-based location inference](@ref). The
+    rank behaviour predates these specifications and is not changed by them.
 
 ## 8. Worked values
 
 Conformance vectors, printed to six decimal places.
 
 ``x`` = `[5.1, 4.9, 6.2, 5.8, 5.3, 6.1, 5.5, 5.9, 4.7, 6.0]`, ``n_x = 10``;
-``y`` = `[4.8, 5.2, 4.5, 5.0, 4.9, 5.4, 4.6, 5.1]``, ``n_y = 8``.
+``y`` = `[4.8, 5.2, 4.5, 5.0, 4.9, 5.4, 4.6, 5.1]`, ``n_y = 8``.
 
-**One sample against ``\mu_0 = 5``** (§3). ``\bar x = 5.55``, ``s = 0.529675``.
+**One sample against ``\mu_0 = 5``** ([§3](@ref "3. One-sample")). ``\bar x = 5.55``,
+``s = 0.529675``.
 
 | quantity | value |
 |---|---|
@@ -199,7 +208,8 @@ Conformance vectors, printed to six decimal places.
 
 with ``t_{9,\,0.975} = 2.262157``.
 
-**Two samples, equal variances** (§4). ``\hat\delta = 0.6125``, ``s_p = 0.444673``.
+**Two samples, equal variances** ([§4](@ref "4. Two samples, equal variances (Student)")).
+``\hat\delta = 0.6125``, ``s_p = 0.444673``.
 
 | quantity | value |
 |---|---|
@@ -209,7 +219,8 @@ with ``t_{9,\,0.975} = 2.262157``.
 | ``p_{\text{both}}`` | `0.010358` |
 | interval, ``1-\alpha = 0.95`` | `(0.165355, 1.059645)` |
 
-**Two samples, unequal variances** (§5). ``\hat\delta = 0.6125``.
+**Two samples, unequal variances**
+([§5](@ref "5. Two samples, unequal variances (Welch)")). ``\hat\delta = 0.6125``.
 
 | quantity | value |
 |---|---|
@@ -223,7 +234,7 @@ Note ``\nu`` between ``\min(n_x,n_y) - 1 = 7`` and ``n_x + n_y - 2 = 16``, and t
 interval narrower here than the Student one, because the larger sample carries the larger
 variance.
 
-**Paired** (§3.1), ``x`` against
+**Paired** ([§3.1](@ref "3.1 Paired")), ``x`` against
 ``z`` = `[5.0, 4.6, 6.0, 5.5, 5.1, 5.8, 5.2, 5.6, 4.4, 5.7]`.
 
 | quantity | value |
@@ -235,18 +246,22 @@ variance.
 
 ## 9. In this package
 
-§3 is [`OneSampleTTest`](@ref), whose paired form §3.1 is the two-argument method. §4 is
-[`EqualVarianceTTest`](@ref) and §5 is [`UnequalVarianceTTest`](@ref); both are subtypes of
-`TwoSampleTTest`. Unlike R, this package has no single entry point that dispatches between
-them, so §5 must be asked for by name.
+[§3](@ref "3. One-sample") is [`OneSampleTTest`](@ref), whose paired form
+[§3.1](@ref "3.1 Paired") is the two-argument method.
+[§4](@ref "4. Two samples, equal variances (Student)") is [`EqualVarianceTTest`](@ref) and
+[§5](@ref "5. Two samples, unequal variances (Welch)") is [`UnequalVarianceTTest`](@ref);
+both are subtypes of `TwoSampleTTest`. Unlike R, this package has no single entry point
+that dispatches between them, so [§5](@ref "5. Two samples, unequal variances (Welch)")
+must be asked for by name.
 
-`pvalue` implements §6 and `confint` implements §7, both on the shared `TTest` supertype.
-All three tests accept `μ0` as a trailing positional argument, and §3 and §4 additionally
-accept summary statistics — mean, standard deviation or variance, and count — in place of
-the data.
+`pvalue` implements [§6](@ref "6. p-values") and `confint` implements
+[§7](@ref "7. Confidence interval"), both on the shared `TTest` supertype. All three tests
+accept `μ0` as a trailing positional argument, and [§3](@ref "3. One-sample") and
+[§4](@ref "4. Two samples, equal variances (Student)") additionally accept summary
+statistics (mean, standard deviation or variance, and count) in place of the data.
 
-The departure from this specification is the one-sided interval convention of §7.1, which
-is correct here but not in the rank tests.
+The departure from this specification is the one-sided interval convention of
+[§7.1](@ref "7.1 One-sided intervals"), which is correct here but not in the rank tests.
 
 ## 10. References
 
