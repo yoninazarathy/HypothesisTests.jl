@@ -200,8 +200,8 @@ Continuity of ``F`` is a convenience rather than a requirement. It makes zeros a
 events of probability zero, so the ranks are the integers ``1, \dots, n`` and the lattice
 distribution of [§2.2](@ref "2.2 Exact null distribution, no ties") applies. Under a
 discrete or mixed ``F`` the procedure remains exact provided ties are handled as in
-[§2.3](@ref "2.3 Exact null distribution, ties present") and zeros are discarded as
-described below, the latter at the price of conditioning on ``n``.
+[§2.3](@ref "2.3 Exact null distribution, ties present"), which also explains in what sense
+such a test is exact, and zeros are discarded as described below.
 
 What cannot be weakened is symmetry. Testing ``\operatorname{median}(F) = 0`` is a
 different problem, and this test does not solve it. ``W^+`` sits at ``n(n+1)/4`` on average
@@ -222,16 +222,17 @@ the pseudomedian that [§5](@ref "5. Point estimation") and
 **Zeros.** Observations with ``d_i = 0`` are discarded before ranking; a zero has no sign
 to rank. All of [§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)") and all of
 [§4](@ref "4. Contrast sets")–[§6](@ref "6. Interval estimation") are computed from the
-``n`` retained observations. ``N`` enters nothing that is computed, and an implementation
-that reports it should say which of the two counts it is reporting.
+``n`` retained observations. ``N`` enters nothing that is computed, so an implementation
+reporting a sample size should report both counts, or say which one it means.
 
 The discard is total. The procedure returns exactly what it would have returned had those
 observations never been recorded, so appending zeros to a sample moves neither ``W^+``, nor
 the p-value, nor the estimate, nor the interval.
 
-Discarding conditions the test on which observations were non-zero, and so on ``n``. That
-costs nothing in exactness, since the retained signs are still independent and each ``\pm``
-with probability ``1/2`` whatever the zeros did. It does cost information: only ``n`` of the
+Discarding conditions the test on which observations were non-zero, and so on ``n``, in
+the sense set out in [§2.3](@ref "2.3 Exact null distribution, ties present"). That costs
+nothing in exactness, since the retained signs are still independent and each ``\pm`` with
+probability ``1/2`` whatever the zeros did. It does cost information: only ``n`` of the
 ``N`` observations reach the test, and the support of a statistic built from ``n`` ranks is
 coarser than one built from ``N``, so the smallest attainable p-value is larger and the
 power lower.
@@ -324,14 +325,38 @@ P(W^+ \le w) = 2^{-n} \, \#\Bigl\{ \varepsilon \in \{0,1\}^n : \textstyle\sum_i 
 
 at cost ``O(2^n)``. The proportions of assignments falling at or below and at or above the
 observed ``W^+`` are written ``q_{\le}`` and ``q_{\ge}``, and are what
-[§2.5](@ref "2.5 p-values") uses. This is a conditional distribution given the tie pattern,
-which is what makes it exact.
+[§2.5](@ref "2.5 p-values") uses.
 
-**Implementations.** Nothing in StatsFuns covers this case, and R does not attempt it:
-`wilcox.test` warns that it cannot compute an exact p-value with ties, or with zeros, and
-falls back on its normal approximation. The enumeration is this package's own, and being
-exponential it is bounded rather than corrected
-([§10](@ref "10. In this package")).
+**What "conditional" means here.** The distribution just described is not the distribution
+of ``W^+`` over repeated samples from ``F``. It is the distribution over the ``2^n`` sign
+patterns with the observed absolute values, and therefore their midranks, held fixed at
+what was seen. Every probability in
+[§2.5](@ref "2.5 p-values") is computed in that fixed-``|d|`` distribution.
+
+Two things make this the right object rather than a retreat from one. Under the null the
+signs are independent of ``|d|``, so fixing ``|d|`` discards nothing that bears on the
+null. And a test whose level is exactly ``\alpha`` for every possible value of ``|d|`` has
+level exactly ``\alpha`` when averaged over ``|d|``, which is the unconditional statement:
+conditional exactness is the stronger property, not a weaker substitute for it. That is
+also why the untied case of [§2.2](@ref "2.2 Exact null distribution, no ties") needs no
+such discussion. There the midranks are ``1, \dots, n`` whatever the data, so conditioning
+on them fixes nothing, and the two distributions coincide.
+
+Discarding zeros ([§2.1](@ref "2.1 Model, estimand, statistic")) conditions in exactly the
+same way, on which observations were non-zero, and is exact for the same reason.
+
+**Implementations.** This package computes this distribution, and reaches it often.
+`ExactSignedRankTest` enumerates whenever the tie total is non-zero, and `SignedRankTest`
+selects that test automatically for tied data up to ``n = 15``, going to the normal
+approximation above it. `method = :exact` forces the route as far as
+[`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N)`= 25`, past which
+it refuses rather than enumerate. The tied p-value of [§9](@ref "9. Worked values") is
+computed this way.
+
+Nothing in StatsFuns covers the tied case, and base R declines it: `wilcox.test` warns that
+it cannot compute an exact p-value with ties, or with zeros, and falls back on its normal
+approximation. R's `exactRankTests::wilcox.exact` does compute it, and one of the tied
+p-values in this package's test suite is taken from it.
 
 ### 2.4 Normal approximation
 
@@ -408,8 +433,29 @@ readable as an estimate of ``P(X > Y)``.
 
 ### 3.1 Model, estimand, statistic
 
-**Model.** The two samples are independent, i.i.d. from continuous ``F_x`` and ``F_y``.
-The null hypothesis is ``F_x = F_y``.
+**Model.** The two samples are independent of each other, each i.i.d. The null hypothesis
+is ``F_x = F_y``, the two distributions equal and otherwise unrestricted.
+
+Equality is what makes the test exact, because it makes the ``N`` observations
+exchangeable: every assignment of the pooled midranks to the two samples is then equally
+likely, which is the whole of [§3.2](@ref "3.2 Exact null distribution, no ties") and
+[§3.3](@ref "3.3 Exact null distribution, ties present"). As in
+[§2.1](@ref "2.1 Model, estimand, statistic"), continuity of ``F_x`` and ``F_y`` is a
+convenience: it makes ties events of probability zero, so the lattice distribution of
+[§3.2](@ref "3.2 Exact null distribution, no ties") applies. Discrete or mixed
+distributions keep exactness through the conditional enumeration of
+[§3.3](@ref "3.3 Exact null distribution, ties present").
+
+Equality cannot be weakened to ``P(X > Y) = 1/2``. That weaker statement leaves ``F_x`` and
+``F_y`` free to differ in spread, and then the pooled observations are no longer
+exchangeable, the null variance in this section is no longer the variance of ``U``, and the
+test does not hold its level. It fails in both directions, according to which sample is
+the larger: for ``X \sim \mathcal{N}(0, 1)`` against ``Y \sim \mathcal{N}(0, 9)``, where
+``P(X > Y) = 1/2`` holds exactly by symmetry, the nominal ``0.05`` two-sided test has size
+about ``0.13`` at ``(n_x, n_y) = (30, 10)`` and about ``0.016`` at ``(10, 30)``. Under
+``F_x = F_y`` both come to ``0.05``. This is the two-sample counterpart of the median
+against pseudomedian trap in [§2.1](@ref "2.1 Model, estimand, statistic"), and it is why
+that section insists on symmetry and this one on equality.
 
 **Estimand.** Under the **shift model** ``F_x(t) = F_y(t - \Delta)``, the estimand is
 ``\Delta``. Without that assumption the test is one of ``P(X > Y) = 1/2``, and
@@ -437,8 +483,9 @@ R_i = \left[ \#\{j : x_j < x_i\} + \frac{1 + \#\{j : x_j = x_i\}}{2} \right]
 The bracket is the midrank of ``x_i`` within ``x`` alone, so summing it over ``i`` gives
 ``n_x(n_x+1)/2`` however ``x`` is tied
 ([§1.1](@ref "1.1 Mathematical observations")), which is precisely the term subtracted.
-What survives is the pair count. The first form is ``O(N \log N)`` via a sort; the
-second is the definition the inversion of [§6.2](@ref "6.2 Inversion") uses. The support is
+What survives is the pair count. The first form is how the statistic is computed, from one
+sort of the pooled sample; the second is the definition the inversion of
+[§6.2](@ref "6.2 Inversion") works with. The support is
 ``\{0, \tfrac{1}{2}, \dots, n_x n_y\}``, integer-valued absent ties, symmetric under the
 null about ``n_x n_y / 2``.
 
@@ -472,10 +519,18 @@ more force: the normalising constant ``\binom{N}{n_x}`` exceeds ``2^{63}`` for b
 samples from ``n_x = n_y = 34``, where ``\binom{68}{34} \approx 2.85 \times 10^{19}``.
 
 **Implementations.** Here ``G_{n_x,n_y}`` is `StatsFuns.wilcoxcdf(nx, ny, u)`, with
-`wilcoxccdf` for the upper tail; R's counterparts are `pwilcox`, `dwilcox` and `qwilcox`,
-again C routines in `nmath`, memoising the counts in `double`. Ties are handled as in
-[§2.3](@ref "2.3 Exact null distribution, ties present"): by this package's own
-enumeration, and by neither of the other two.
+`wilcoxccdf` for the upper tail. It computes this distribution, but not by the recursion
+above: it uses the recurrence of [Löffler (1983)](@cite loeffler1983), a convolution over
+divisor sums that reaches the same probabilities with fewer allocations. The recursion
+stated here is the one R uses, in the C routines `pwilcox`, `dwilcox` and `qwilcox` of its
+`nmath` library, which memoise the counts in `double`. Two algorithms, one distribution;
+that the two agree is worth checking, and they do, to floating-point precision at every
+attainable ``u`` for ``n_x, n_y \le 7``.
+
+Ties are handled as in [§2.3](@ref "2.3 Exact null distribution, ties present"): by this
+package's own enumeration, which `ExactMannWhitneyUTest` reaches whenever the tie total is
+non-zero, and which `MannWhitneyUTest` selects automatically for tied data up to
+``N = 10``. Neither StatsFuns nor R offers it.
 
 ### 3.3 Exact null distribution, ties present
 
@@ -486,9 +541,18 @@ formulas follow.
 
 ### 3.4 Normal approximation
 
-``U`` is asymptotically normal. Write ``\mu = U - n_x n_y / 2`` for the centred statistic
-and ``\sigma`` for the square root of the variance in
-[§3.1](@ref "3.1 Model, estimand, statistic"), which carries the tie correction.
+``U`` is asymptotically normal with the mean and variance of
+[§3.1](@ref "3.1 Model, estimand, statistic"). Write
+
+```math
+\mu = U - \frac{n_x n_y}{2}, \qquad
+\sigma = \sqrt{\frac{n_x n_y}{12}\left(N + 1 - \frac{T([x; y])}{N(N-1)}\right)}
+```
+
+for the centred statistic and the tie-corrected standard deviation. As in
+[§2.4](@ref "2.4 Normal approximation"), the tie correction is exact under the conditional
+distribution of [§3.3](@ref "3.3 Exact null distribution, ties present") rather than an
+approximation to it; what is approximate is only the normal shape.
 
 ### 3.5 p-values
 
@@ -500,37 +564,69 @@ p_{\text{right}} = 1 - G(U - 1), \qquad
 p_{\text{both}} = \min\bigl(1,\, 2\, G(\min(U,\, n_x n_y - U))\bigr) .
 ```
 
-The two-sided form folds to the lower tail by the null symmetry of
-[§3.1](@ref "3.1 Model, estimand, statistic"), and is clipped because the fold is exact
-only away from the centre.
+The fold to the lower tail is exact, not an approximation: by the null symmetry of
+[§3.1](@ref "3.1 Model, estimand, statistic"),
+``G(n_x n_y - U) = P(U' \ge U)``, so ``G(\min(U, n_x n_y - U))`` is the smaller of the two
+tails wherever ``U`` sits, the centre included. The clip is needed for the reason it is
+needed in [§2.5](@ref "2.5 p-values"): what can exceed ``1`` is the doubling, when ``U``
+lands on ``n_x n_y / 2`` and that value carries an atom. At ``n_x = n_y = 2`` with
+``U = 2`` the doubled tail is ``4/3``.
 
 Exact under ties, and the normal approximation: exactly as in [§2.5](@ref "2.5 p-values"),
 with ``q_{\le}, q_{\ge}`` from
 [§3.3](@ref "3.3 Exact null distribution, ties present") and
 ``\mu, \sigma`` from [§3.4](@ref "3.4 Normal approximation").
 
+Degenerate cases: if ``n_x = 0`` or ``n_y = 0`` there is no pair to compare, ``U = 0`` is
+the only attainable value, the null distribution is a point mass there, and all three exact
+p-values are ``1``. If ``\mu = \sigma = 0``, all three approximate p-values are ``1``.
+
 ## 4. Contrast sets
 
-From here the two procedures are treated as one. Each forms a set of ``m`` numbers lying on
-the scale of the data, one for every pair of observations it is able to compare, and all of
-the location inference is read off that set: the point estimate of
-[§5](@ref "5. Point estimation") is its median, and the interval endpoints of
-[§6](@ref "6. Interval estimation") are two of its order statistics
-``V_{(1)} \le \dots \le V_{(m)}``. This specification calls those numbers the
-**contrasts**.
+The two procedures differ in one place only, and this section is where that difference is
+isolated. Each forms a set of ``m`` numbers on the scale of the data, one for each pair of
+observations its statistic compares. What differs is which pairs those are, and what number
+each pair contributes:
 
-The name is a convenience of this document rather than established usage. The one-sample
-contrasts are normally called the Walsh averages and the two-sample ones simply the
-differences; no standard term covers both, and [§4.2](@ref "4.2 The counting identity")
-onwards needs one, because from that point nothing distinguishes the two procedures. Note
-that this is not the analysis-of-variance sense of *contrast*: the one-sample contrasts are
-averages of pairs, whose coefficients sum to one rather than to zero.
+  - the one-sample statistic compares every retained observation with every other and with
+    itself, giving the ``m = n(n+1)/2`` pairs ``i \le j`` of a single sample, each
+    contributing the average ``(d_i + d_j)/2``;
+  - the two-sample statistic compares every ``x`` with every ``y``, and never an ``x`` with
+    an ``x``, giving the ``m = n_x n_y`` cross pairs, each contributing the difference
+    ``x_i - y_j``.
 
-What makes the common treatment possible is the identity of
-[§4.2](@ref "4.2 The counting identity"). For both procedures the test statistic, evaluated
-against a hypothesised shift ``\theta``, is a count of how many contrasts lie above
-``\theta``. Inverting the test therefore amounts to counting contrasts, and that is the
-only property [§5](@ref "5. Point estimation") and [§6](@ref "6. Interval estimation") use.
+[§4.1](@ref "4.1 Definitions") states those two definitions, and they are the last thing
+stated twice for a substantive reason. Everything after them is a statement about a set of
+``m`` numbers: sort them as ``V_{(1)} \le \dots \le V_{(m)}``, and the estimate of
+[§5](@ref "5. Point estimation") is their sample median while the interval endpoints of
+[§6](@ref "6. Interval estimation") are two of their order statistics. This specification
+calls the numbers themselves the **contrasts**.
+
+Note which median that is. The median of the ``m`` contrasts is a number computed from the
+data, and it is the estimator; the pseudomedian of
+[§2.1](@ref "2.1 Model, estimand, statistic") and the shift of
+[§3.1](@ref "3.1 Model, estimand, statistic") are the population quantities being
+estimated. They are not the same object, and neither is the sample median of the data
+itself. [§5](@ref "5. Point estimation") keeps the three apart.
+
+The common treatment rests on the identity of
+[§4.2](@ref "4.2 The counting identity"): for both procedures the statistic, recomputed
+against a hypothesised location, counts how many contrasts lie above it. Inverting either
+test is therefore counting contrasts, and it is the only property
+[§5](@ref "5. Point estimation") and [§6](@ref "6. Interval estimation") use.
+
+The notation below nevertheless stays doubled, because the two statistics keep their own
+names: results are stated for the one-sample case, in ``W^+`` and ``\theta``, and
+[§6.2](@ref "6.2 Inversion") gives the substitution (``U``, ``D``, ``\Delta``) that carries
+each of them to the two-sample case. No step of any argument changes under that
+substitution. Reading the one-sample line and applying the substitution is enough; the two
+are not being developed independently.
+
+The word **contrast** is a convenience of this document rather than established usage. The
+one-sample contrasts are normally called the Walsh averages and the two-sample ones simply
+the differences, and no standard term covers both. This is also not the
+analysis-of-variance sense of *contrast*: the one-sample contrasts are averages of pairs,
+whose coefficients sum to one rather than to zero.
 
 ### 4.1 Definitions
 
@@ -582,30 +678,53 @@ functions of the contrast set and not of the ranks.
 
 ## 5. Point estimation
 
-The **Hodges-Lehmann estimator** [hodges1963](@cite) is the median of the contrast set:
+The **Hodges-Lehmann estimator** [hodges1963](@cite) is the sample median of the contrast
+set of [§4.1](@ref "4.1 Definitions"). The two cases in turn.
+
+**One sample.** The median of the ``n(n+1)/2`` Walsh averages,
 
 ```math
-\hat\theta = \operatorname{median}\{A_{ij}\}, \qquad
-\hat\Delta = \operatorname{median}\{D_{ij}\} .
+\hat\theta = \operatorname{median}\{ A_{ij} : 1 \le i \le j \le n \} ,
 ```
 
-By [§4.2](@ref "4.2 The counting identity") this is the value at which the statistic sits
-closest to its null mean ``m/2``, which is the sense in which it is the estimator the test
-induces. For even ``m`` the median is taken as the mean of ``V_{(m/2)}`` and
-``V_{(m/2+1)}``, so the estimate need not be a member of the contrast set.
+a consistent estimator of the pseudomedian of
+[§2.1](@ref "2.1 Model, estimand, statistic"). It is not the sample median of the ``d_i``,
+which estimates the median of ``F``, a different functional except under symmetry.
 
-``\hat\theta`` is a consistent estimator of the pseudomedian of
-[§2.1](@ref "2.1 Model, estimand, statistic") and ``\hat\Delta`` of the shift of
-[§3.1](@ref "3.1 Model, estimand, statistic"). Neither is the corresponding sample median,
-and neither is a difference of sample medians; equality holds only for exactly symmetric
-configurations.
+**Two samples.** The median of the ``n_x n_y`` cross-group differences,
 
-Both are equivariant under increasing affine maps: for ``a > 0``, the estimator computed
-from ``a \cdot d + b`` is ``a\hat\theta + b``. Neither is equivariant under general
-monotone maps. Consequently an estimate computed on a log scale and exponentiated is a
-ratio estimate, but it is *not* the estimate the procedure would give if run on
-untransformed data. The scale on which the procedure runs is part of the specification
-of an analysis, not a presentational choice.
+```math
+\hat\Delta = \operatorname{median}\{ D_{ij} : 1 \le i \le n_x,\ 1 \le j \le n_y \} ,
+```
+
+a consistent estimator of the shift of [§3.1](@ref "3.1 Model, estimand, statistic"), or
+without a shift model of the median of ``X - Y``. It is not
+``\operatorname{median}(x) - \operatorname{median}(y)``, which is a different quantity
+again.
+
+Both statements about what these are *not* matter in practice, because the gap shows up on
+ordinary samples. On the one-sample data of [§9](@ref "9. Worked values"),
+``\hat\theta = 9.675`` against a sample median of ``10.1``. On a tied nine-against-nine
+two-sample set, ``\hat\Delta = 0.56`` against a difference of sample medians of ``0.62``.
+Equality holds only for exactly symmetric configurations.
+
+For either, by [§4.2](@ref "4.2 The counting identity"), the estimate is the value at which
+the statistic sits closest to its null mean ``m/2``, which is the sense in which it is the
+estimator the test induces. For even ``m`` the median is taken as the mean of
+``V_{(m/2)}`` and ``V_{(m/2+1)}``, so the estimate need not be a member of the contrast
+set.
+
+**Changing scale.** Shifting and stretching the data does the same to the estimate: from
+``a d + b`` with ``a > 0`` the estimator returns ``a \hat\theta + b``. Anything more than
+that changes the answer. Take logs, estimate, exponentiate, and what comes back is a ratio,
+a perfectly good estimate of a different quantity, but not the number the procedure returns
+on the untransformed data.
+
+The p-value behaves differently, which is easy to conflate. ``U`` depends on the pooled
+data only through its ranks, so any increasing transformation of a two-sample data set
+leaves the two-sided p-value bit-for-bit unchanged while moving the estimate. Choosing the
+scale is therefore part of specifying the analysis, and it is a choice about the estimate,
+not about the test.
 
 ## 6. Interval estimation
 
@@ -877,11 +996,12 @@ are bounded rather than corrected: see
 Departures from the specification, recorded here because
 [§8](@ref "8. Relation to other implementations") asks the same of other implementations.
 The degenerate case of [§6.6](@ref "6.6 Zeros, ties, and degeneracy") returns the widest
-interval silently rather than warning. The signed rank tests report ``N`` as their number
-of observations, not the ``n`` of [§2.1](@ref "2.1 Model, estimand, statistic") that the
-test is computed from, and their `median` field is the sample median of all ``N``
-observations, which is a descriptive statistic rather than the estimand of
-[§5](@ref "5. Point estimation"). And the contrast set is materialised as written in
+interval silently rather than warning. Every test here carries a `median` field, the sample
+median for the signed rank tests and the difference of sample medians for the Mann-Whitney
+ones. Both are descriptive statistics rather than the estimand of
+[§5](@ref "5. Point estimation"), and that field, rather than anything the procedure needs,
+is what makes an empty sample throw instead of returning the degenerate p-value of
+[§3.5](@ref "3.5 p-values"). And the contrast set is materialised as written in
 [§4](@ref "4. Contrast sets") rather than computed by selection as
 [§7](@ref "7. Computational cost") describes, which bounds the usable sample size; the
 bound is [`MAX_RANK_CONTRASTS`](@ref HypothesisTests.MAX_RANK_CONTRASTS), and the tied
