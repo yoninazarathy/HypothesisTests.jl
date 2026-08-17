@@ -455,8 +455,15 @@ sample it accepts as exact comes here. The tied p-value of
 
 Nothing in StatsFuns covers the tied case, and base R declines it: `wilcox.test` warns that
 it cannot compute an exact p-value with ties, or with zeros, and falls back on its normal
-approximation. R's `exactRankTests::wilcox.exact` does compute it, and one of the tied
-p-values in this package's test suite is taken from it.
+approximation. R's `exactRankTests::wilcox.exact` does compute it, by the shift algorithm
+rather than by enumeration, and this package's tied p-values are tested against it. Its
+one-sided values agree with [§2.3](@ref "2.3 p-values") exactly; so do its two-sided ones
+here, but for a reason worth recording: `wilcox.exact` doubles nothing, instead summing the
+attainable outcomes at least as extreme on the far side, and for the one-sample statistic
+the two rules coincide because the conditional distribution is symmetric whatever the ties,
+the flip of every sign taking ``W^+`` to ``\sum_i R_i - W^+``. The two-sample conditional
+distribution has no such symmetry, and there the two rules part:
+[§3.2.2](@ref "3.2.2 Exact, ties present").
 
 #### 2.2.3 Normal approximation
 
@@ -740,6 +747,17 @@ distribution is obtained by enumeration, here over the ``\binom{N}{\min(n_x, n_y
 assignments of the observed midranks to the smaller sample, and the same three p-value
 formulas follow.
 
+Unlike its one-sample counterpart, this conditional distribution is in general *not*
+symmetric: reflecting the midranks requires the tie pattern to read the same from both ends,
+which nothing guarantees. The one-sided p-values are unaffected. The two-sided one is where
+conventions part, since doubling the smaller tail and summing the far tail now disagree:
+on ``x = 1, \dots, 10`` against ``y = 2, 4, \dots, 24``, the doubling of
+[§3.3](@ref "3.3 p-values") gives ``0.0120035`` where `exactRankTests::wilcox.exact`,
+which sums, gives ``0.0118890``, the one-sided values agreeing exactly. Neither is an error;
+they answer differently the question of what counts as at least as extreme on the other side
+of an asymmetric distribution. This specification doubles, which is also what the untied
+routes of both procedures do.
+
 #### 3.2.3 Normal approximation
 
 ``U`` is asymptotically normal with the mean and variance of
@@ -1013,18 +1031,24 @@ bound, when ``F`` is continuous and symmetric about ``\theta``: continuity is wh
 symmetry is what gives ``W^+(\theta)`` the null distribution whose tails appear on the
 right. Drop either and the equality goes:
 
-  - ties or zeros, which is to say discrete data, leave the achieved coverage above the
-    figure computed here, since the untied null distribution is being inverted for data
-    that does not have it. On ``d`` uniform on ``\{-3, \dots, 3\}`` at ``n = 15``, where
-    every sample is tied, the nominal ``0.95`` interval covers about ``0.982`` of the time
-    against the ``0.95209`` this formula gives. Conservative, but no longer exact;
-    [§6.6](@ref "6.6 Zeros, ties, and degeneracy") returns to this.
-  - asymmetric ``F`` breaks it in the other direction and by less. For
+  - ties or zeros, which is to say discrete data, split the answer by whether the
+    endpoints count, a distinction continuity had made idle
+    ([§6.2.1](@ref "6.2.1 What happens at the endpoints")). With the endpoints included
+    the interval is conservative: on ``d`` uniform on ``\{-3, \dots, 3\}`` at ``n = 15``,
+    where every sample is tied, it covers about ``0.982`` against the ``0.95209`` this
+    formula gives. Excluding them, as the open interval this section derives does,
+    coverage falls to about ``0.888``, *below* nominal: on data this coarse an endpoint
+    lands exactly on ``\theta`` in about ``9\%`` of samples, and an open interval
+    excludes its own endpoints. The entire gap between the two figures is that boundary
+    event. [§6.2.1](@ref "6.2.1 What happens at the endpoints") and
+    [§6.6](@ref "6.6 Zeros, ties, and degeneracy") return to this.
+  - asymmetric ``F`` breaks the equality by less, and endpoints play no part. For
     ``\mathrm{Exponential}(1)`` at ``n = 15``, coverage of the pseudomedian is about
     ``0.947``.
 
-Both figures are Monte Carlo over ``200\,000`` samples, against ``0.95226`` for the
-continuous symmetric case that the equality describes.
+The figures are Monte Carlo over ``200\,000`` samples through this package's `confint`;
+the same experiment on a continuous symmetric ``F`` returns ``0.95227``, the equality's
+``0.95209`` to Monte Carlo accuracy, with open and closed identical.
 
 #### 6.2.1 What happens at the endpoints
 
@@ -1052,11 +1076,27 @@ estimates of the observed sample, and ``\theta`` coincides with one of them with
 zero, so the coverage statement above is unaffected. It is discrete and coarsely recorded
 data that make the case real, since there a hypothesised value routinely coincides with an
 observed one: integer scores and counts, measurements rounded to a grid, and times recorded
-on a coarse schedule, such as a time to peak read off scheduled sampling points. On such data
-the endpoint question has positive probability, and it arrives alongside the larger effect of
-[§6.6](@ref "6.6 Zeros, ties, and degeneracy"): the exact index inverts the untied null
-distribution, so the achieved coverage is above nominal rather than equal to it. The interval
-remains conservative; it stops being exact, and the endpoints stop being immaterial.
+on a coarse schedule, such as a time to peak read off scheduled sampling points.
+
+On such data the endpoint question is not a nicety but the dominant term. Measured through
+this package's `confint` at ``n = 15`` and nominal ``0.95``, over ``200\,000`` samples per
+row:
+
+| ``F`` | endpoints included | endpoints excluded | ``P(\text{an endpoint} = \theta)`` |
+|:---|:---|:---|:---|
+| uniform on ``\{-3, \dots, 3\}`` | ``0.98174`` | ``0.88818`` | ``0.094`` |
+| uniform on ``\pm\{1, 2, 3\}`` | ``0.98324`` | ``0.87114`` | ``0.112`` |
+| standard normal | ``0.95227`` | ``0.95227`` | ``0`` |
+
+Two effects separate. Inverting the untied null distribution for tied data is worth about
+``+0.03`` of coverage, which is the conservatism
+[§6.6](@ref "6.6 Zeros, ties, and degeneracy") describes and the first column shows.
+Excluding the endpoints is worth about ``-0.09`` to ``-0.11``, three times as large and in
+the other direction, which is the whole distance between the two coverage columns. The
+classical conservative guarantee is a statement about the closed interval,
+``P(V_{(k+1)} \le \theta \le V_{(m-k)}) \ge 1 - \alpha``; a reader of the returned pair
+who treats the endpoints as excluded holds an interval that on data like this covers less
+than it claims. On coarse data, read the endpoints as included.
 
 ### 6.3 Exact index
 
@@ -1167,10 +1207,19 @@ distribution of [§2.2.1](@ref "2.2.1 Exact, no ties") or
 distribution is the conditional one of
 [§2.2.2](@ref "2.2.2 Exact, ties present") or
 [§3.2.2](@ref "3.2.2 Exact, ties present"), so the attained coverage is approximate rather
-than exact, and by the first bullet of [§6.2](@ref "6.2 Inversion") it errs above the nominal
-level rather than below. The classical construction retains the untied distribution;
-the alternative is to decline an exact interval under ties and fall back to
-[§6.4](@ref "6.4 Normal-approximation index").
+than exact. With the endpoints included it errs above the nominal level; excluded, it can
+err well below, through the endpoint atoms
+[§6.2.1](@ref "6.2.1 What happens at the endpoints") measures.
+
+The classical construction retains the untied distribution, and this page specifies it.
+Two alternatives exist. One is to decline an exact interval under ties and fall back to
+[§6.4](@ref "6.4 Normal-approximation index"), which is what R's `wilcox.test` does. The
+other is to invert the tied conditional distribution itself, recomputing it at every
+candidate shift, which is what `exactRankTests::wilcox.exact` does; being a different
+construction it returns different endpoints, ``(-0.5, 1)`` at ``0.95`` on the sample of
+[§8.2](@ref "8.2 One sample, five zeros and ties among the rest") where the classical
+construction gives ``(-0.25, 0.75)``, and its reported estimate, ``0.375`` there, is not
+the Hodges-Lehmann ``0.5`` either.
 
 **Degeneracy.** If ``P(W \le 0) \ge \alpha/2`` then ``k = 0`` and the widest available
 interval, ``(V_{(1)}, V_{(m)})``, does not attain the nominal level. Its coverage is
