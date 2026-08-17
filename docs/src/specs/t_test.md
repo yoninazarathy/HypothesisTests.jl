@@ -180,8 +180,9 @@ bound, so
 ```
 
 !!! warning "This package is not internally consistent here"
-    The convention above is the one this package's t-tests and `BinomialTest` use, and the
-    one R uses. The Wilcoxon rank tests use the *opposite* one: their `tail = :left`
+    The convention above is the one every test in this package uses except the rank tests,
+    so the t-tests, the z-tests, `BinomialTest` and `FisherExactTest`, and it is the one R
+    uses. The four Wilcoxon rank tests use the *opposite* one: their `tail = :left`
     returns a lower bound and `tail = :right` an upper bound. See
     [§6.5](@ref "6.5 One-sided intervals") of [Rank-based location inference](@ref). The
     rank behaviour predates these specifications and is not changed by them.

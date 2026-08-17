@@ -891,12 +891,13 @@ at level ``2L - 1``; that is, the two-sided ``\alpha`` used is ``2(1-L)`` rather
 
 !!! warning "This package is not internally consistent here"
     Which of the two a given tail selects is a naming convention, not mathematics, and
-    this package does not apply one convention throughout. Its rank tests return
+    this package does not apply one convention throughout. Its four rank tests return
     ``(V_{(k+1)}, \infty)``, a *lower* bound, for `tail = :left`, and the upper bound
-    for `tail = :right`. Its t-tests and `BinomialTest` do the opposite, returning an
-    upper bound for `tail = :left`, which is also what R does for both `t.test` and
-    `wilcox.test` under `alternative = "less"`. See [§7.1](@ref "7.1 One-sided intervals")
-    of [The t-tests](@ref).
+    for `tail = :right`. Every other test here that accepts a `tail` does the opposite,
+    returning an upper bound for `tail = :left`: the three t-tests, the z-tests,
+    `BinomialTest` and `FisherExactTest`. That is also what R does, for `t.test`,
+    `wilcox.test` and `binom.test` alike, under `alternative = "less"`. See
+    [§7.1](@ref "7.1 One-sided intervals") of [The t-tests](@ref).
 
     The rank behaviour predates these specifications and is not changed by them.
     Reconciling the two is a breaking change to whichever side moves.
