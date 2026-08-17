@@ -895,9 +895,10 @@ at level ``2L - 1``; that is, the two-sided ``\alpha`` used is ``2(1-L)`` rather
 **Zeros.** By [§2.1](@ref "2.1 Model, estimand, statistic") the one-sample statistic is
 computed from the ``n`` non-zero differences. The contrast set must be formed from the
 same ``n`` observations, or the p-value and the interval describe different samples. For a
-20-point sample containing five zeros the contrast set has 120 members, not 210. If every
-difference is zero, every contrast is zero and the interval degenerates to the point
-``0``.
+20-point sample containing five zeros the contrast set has 120 members
+(``m = n(n+1)/2`` with ``n = 15``), not 210 (which is ``N(N+1)/2`` with ``N = 20``, the
+count obtained by retaining the zeros). If every difference is zero, every contrast is zero
+and the interval degenerates to the point ``0``.
 
 **Ties on the exact route.** [§6.3](@ref "6.3 Exact index") inverts the untied null
 distribution of [§2.2](@ref "2.2 Exact null distribution, no ties") or
@@ -987,7 +988,7 @@ so ``n = 15`` and ``T(|d|) = 462``.
 | quantity | value |
 |---|---|
 | ``\hat\theta`` | `0.5` |
-| contrast set size ([§6.6](@ref "6.6 Zeros, ties, and degeneracy")) | `120`, against `210` if zeros were retained |
+| contrast set size ([§6.6](@ref "6.6 Zeros, ties, and degeneracy")) | `120` = ``15 \cdot 16 / 2``, against `210` = ``20 \cdot 21 / 2`` if zeros were retained |
 | exact, ``1-\alpha = 0.90`` | `(-0.25, 0.75)` |
 | two-sided p-value ([§2.5](@ref "2.5 p-values"), tied branch) | `0.30719` |
 
