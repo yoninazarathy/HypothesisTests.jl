@@ -10,8 +10,9 @@ Specification of two rank procedures and the location inference built on them:
 
 [§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)") and
 [§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)") take the two
-procedures in turn, each giving the statistic, its exact null distribution, the normal
-approximation to it, and the p-value. The location inference is then common to both: the
+procedures in turn, each giving the statistic, the three null distributions available for it
+(two exact, one approximate) and when each applies, and the p-value read off whichever is in
+force. The location inference is then common to both: the
 pairwise estimates it is read off ([§4](@ref "4. Pairwise estimates")), the Hodges-Lehmann point
 estimate ([§5](@ref "5. Point estimation")), and the confidence interval obtained by
 inverting either test ([§6](@ref "6. Interval estimation")). The rest relates the
@@ -73,8 +74,8 @@ when ``v`` has no ties. Both normal approximations reduce the tie pattern to
 statistic ([§2.1](@ref "2.1 Model, estimand, statistic"),
 [§3.1](@ref "3.1 Model, estimand, statistic")). The exact route never uses ``T``: under
 ties it conditions on the whole multiset of midranks and enumerates
-([§2.3](@ref "2.3 Exact null distribution, ties present"),
-[§3.3](@ref "3.3 Exact null distribution, ties present")).
+([§2.2.2](@ref "2.2.2 Exact, ties present"),
+[§3.2.2](@ref "3.2.2 Exact, ties present")).
 
 ### 1.1 Mathematical observations
 
@@ -183,55 +184,19 @@ is the only route by which the tie pattern reaches either normal approximation.
 
 ## 2. The one-sample procedure (Wilcoxon signed rank)
 
-**Which route applies.** [§2.1](@ref "2.1 Model, estimand, statistic") defines the
-statistic and its null moments. Each of the three sections after it is then a null
-distribution for that statistic, and a p-value is read off exactly one of them for a given
-sample:
-
-| route | null distribution | applies to | cost |
-|---|---|---|---|
-| [§2.2](@ref "2.2 Exact null distribution, no ties") | exact, by a lattice recursion | untied ``\lvert d \rvert``, that is ``T(\lvert d \rvert) = 0`` | ``O(n^3)`` |
-| [§2.3](@ref "2.3 Exact null distribution, ties present") | exact, by enumerating the ``2^n`` sign patterns | tied ``\lvert d \rvert`` | ``O(2^n)`` |
-| [§2.4](@ref "2.4 Normal approximation") | the normal approximation | any sample | ``O(n)`` after the ranking |
-
-The first two are one route in substance: they differ only in how the null distribution is
-obtained, and [§2.5](@ref "2.5 p-values") reads the same three formulas off either. The
-choice between them is forced by the data. The choice between exact and approximate is not:
-it trades the cost above against a p-value that is only asymptotically right.
-
-**In this package.** The tie pattern picks the exact route, and the sample size picks
-between exact and approximate:
-
-  - `ExactSignedRankTest` takes [§2.2](@ref "2.2 Exact null distribution, no ties") when
-    ``T(\lvert d \rvert) = 0`` and [§2.3](@ref "2.3 Exact null distribution, ties present")
-    otherwise, and is never approximate. Past
-    [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N) ``= 25`` the
-    tied p-value is refused rather than enumerated, which `pvalue` reports as an error
-    naming ``n``. The interval is unaffected, since
-    [§6.3](@ref "6.3 Exact index") inverts the untied distribution either way.
-  - `ApproximateSignedRankTest` always takes
-    [§2.4](@ref "2.4 Normal approximation"), tied or not.
-  - `SignedRankTest` returns one of the two: exact for ``n \le 15``, and for
-    ``n \le 50`` when ``\lvert d \rvert`` is untied; approximate above that. Ties therefore
-    lower the threshold from ``50`` to ``15``, because past there the enumeration is what
-    costs. Recall that ``n`` counts the non-zero differences, so the zeros of
-    [§2.1](@ref "2.1 Model, estimand, statistic") are discarded before the rule is applied.
-  - `method = :exact` or `:approximate` overrides the rule, and a callable, passed
-    `(; n, n_nonzero, ties, tie_adjustment)` and returning one of those two symbols, replaces
-    it with a rule of its own.
-
-The interval is routed the same way, by the type: `Exact*` inverts the exact distribution
-([§6.3](@ref "6.3 Exact index")) and `Approximate*` the normal one
-([§6.4](@ref "6.4 Normal-approximation index")).
+Three subsections: the statistic and what it is testing
+([§2.1](@ref "2.1 Model, estimand, statistic")), the distribution it has under the null
+([§2.2](@ref "2.2 Null distribution of the signed rank statistic")), and the p-values read
+off that distribution ([§2.3](@ref "2.3 p-values")).
 [§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)") has the same
-four subsections in the same order, and the same rule with one threshold changed.
+three, in the same order, for the two-sample statistic.
 
 ### 2.1 Model, estimand, statistic
 
 **Model.** The ``d_i`` are independent. The null hypothesis is that each is symmetric
 about ``0``, meaning ``P(d_i > t) = P(d_i < -t)`` for every ``t``.
 
-That is the whole of what [§2.2](@ref "2.2 Exact null distribution, no ties")–[§2.5](@ref "2.5 p-values")
+That is the whole of what [§2.2.1](@ref "2.2.1 Exact, no ties")–[§2.3](@ref "2.3 p-values")
 use: symmetry about ``0`` makes the signs independent of ``|d|`` and each ``\pm`` with
 probability ``1/2``, and every null distribution below follows from that alone. In
 particular the ``d_i`` need not be identically distributed for the null distribution to
@@ -241,9 +206,9 @@ distribution.
 
 Continuity of ``F`` is a convenience rather than a requirement. It makes zeros and ties
 events of probability zero, so the ranks are the integers ``1, \dots, n`` and the lattice
-distribution of [§2.2](@ref "2.2 Exact null distribution, no ties") applies. Under a
+distribution of [§2.2.1](@ref "2.2.1 Exact, no ties") applies. Under a
 discrete or mixed ``F`` the procedure remains exact provided ties are handled as in
-[§2.3](@ref "2.3 Exact null distribution, ties present"), which also explains in what sense
+[§2.2.2](@ref "2.2.2 Exact, ties present"), which also explains in what sense
 such a test is exact, and zeros are discarded as described below.
 
 What cannot be weakened is symmetry. Testing ``\operatorname{median}(F) = 0`` is a
@@ -279,9 +244,10 @@ H_1 : \theta < 0 \quad (\texttt{tail = :left}), \qquad
 H_1 : \theta > 0 \quad (\texttt{tail = :right}) ,
 ```
 
-small ``W^+`` being the evidence for ``\theta < 0``. Those are the alternatives for the
-p-value; the same names select the *opposite* endpoint of the interval, which is
-[§6.5](@ref "6.5 One-sided intervals")'s warning.
+small ``W^+`` being the evidence for ``\theta < 0``. The same names carry over to the
+one-sided intervals of [§6.5](@ref "6.5 One-sided intervals"), which keep the endpoint that
+inverts the test of the same name: ``\theta < 0`` admits an upper bound, so `tail = :left`
+returns one.
 
 To test ``\theta = \theta_0`` for a value other than zero, run the procedure on
 ``d_i - \theta_0``. Nothing here provides for it directly, and nothing needs to: every
@@ -301,7 +267,7 @@ observations never been recorded, so appending zeros to a sample moves neither `
 the p-value, nor the estimate, nor the interval.
 
 Discarding conditions the test on which observations were non-zero, and so on ``n``, in
-the sense set out in [§2.3](@ref "2.3 Exact null distribution, ties present"). That costs
+the sense set out in [§2.2.2](@ref "2.2.2 Exact, ties present"). That costs
 nothing in exactness, since the retained signs are still independent and each ``\pm`` with
 probability ``1/2`` whatever the zeros did. It does cost information: only ``n`` of the
 ``N`` observations reach the test, and the support of a statistic built from ``n`` ranks is
@@ -348,7 +314,58 @@ Under the null the signs are independent of ``|d|`` and each ``\pm`` with probab
 The mean is untouched by ties because the rank total is; the variance is not, because the
 sum of squares is not.
 
-### 2.2 Exact null distribution, no ties
+### 2.2 Null distribution of the signed rank statistic
+
+Three distributions are in play, and a p-value is read off exactly one of them for a given
+sample:
+
+|  | when it applies | the distribution | cost |
+|:---|:---|:---|:---|
+| [§2.2.1](@ref "2.2.1 Exact, no ties") | ``T(\lvert d \rvert) = 0`` | exact, by a lattice recursion | ``O(n^3)`` |
+| [§2.2.2](@ref "2.2.2 Exact, ties present") | ``T(\lvert d \rvert) > 0`` | exact, by enumerating ``2^n`` sign patterns | ``O(2^n)`` |
+| [§2.2.3](@ref "2.2.3 Normal approximation") | any sample | normal, with the moments above | ``O(n)`` |
+
+The costs are per p-value, and follow the ranking, which is ``O(n \log n)`` in itself.
+
+**Choosing between them.** There are two decisions here, and they are of different kinds.
+
+Which *exact* route applies is forced by the data and is not a choice: with no ties the
+midranks are ``1, \dots, n`` and the lattice recursion applies, and with ties they are not,
+so the recursion does not. The two are one route in substance, differing only in how the
+same conditional distribution is reached, and
+[§2.3](@ref "2.3 p-values") reads the same three formulas off either.
+
+Exact against approximate *is* a choice: it trades the cost above, prohibitive for the
+enumeration on a large tied sample, against a p-value that is only asymptotically right. The
+approximate route is also the only one of the three whose distribution responds to ties
+through ``T``, since the exact routes condition on the midranks rather than summarise them.
+
+**In this package.** The tie pattern picks the exact route, and the sample size picks
+between exact and approximate:
+
+  - `ExactSignedRankTest` takes [§2.2.1](@ref "2.2.1 Exact, no ties") when
+    ``T(\lvert d \rvert) = 0`` and [§2.2.2](@ref "2.2.2 Exact, ties present")
+    otherwise, and is never approximate. Past
+    [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N) ``= 25`` the
+    tied p-value is refused rather than enumerated, which `pvalue` reports as an error
+    naming ``n``. The interval is unaffected, since
+    [§6.3](@ref "6.3 Exact index") inverts the untied distribution either way.
+  - `ApproximateSignedRankTest` always takes
+    [§2.2.3](@ref "2.2.3 Normal approximation"), tied or not.
+  - `SignedRankTest` returns one of those two types: exact for ``n \le 15``, and for
+    ``n \le 50`` when ``\lvert d \rvert`` is untied; approximate above that. Ties therefore
+    lower the threshold from ``50`` to ``15``, because past there the enumeration is what
+    costs. Recall that ``n`` counts the non-zero differences, so the zeros of
+    [§2.1](@ref "2.1 Model, estimand, statistic") are discarded before the rule is applied.
+  - `method = :exact` or `:approximate` overrides the rule, and a callable, passed
+    `(; n, n_nonzero, ties, tie_adjustment)` and returning one of those two symbols, replaces
+    it with a rule of its own.
+
+The interval follows the type rather than this rule: `Exact*` inverts the exact distribution
+([§6.3](@ref "6.3 Exact index")) and `Approximate*` the normal one
+([§6.4](@ref "6.4 Normal-approximation index")), whatever route the p-value beside it took.
+
+#### 2.2.1 Exact, no ties
 
 Under the null the signs of the ``d_i`` are independent, each ``\pm`` with probability
 ``1/2``, and independent of ``|d|``. With no ties the midranks are the integers
@@ -385,7 +402,7 @@ in `double`: exact while they stay under ``2^{53}`` and approximate beyond, whic
 different way out of the overflow above. The Julia values are tested against R's, as are
 the p-values and intervals of [§8](@ref "8. Worked values for the rank tests").
 
-### 2.3 Exact null distribution, ties present
+#### 2.2.2 Exact, ties present
 
 With ties the midranks are not ``1, \dots, n`` and the recursion above does not apply.
 The sign-symmetry argument still does: conditionally on the observed multiset of
@@ -398,20 +415,20 @@ P(W^+ \le w) = 2^{-n} \, \#\Bigl\{ \varepsilon \in \{0,1\}^n : \textstyle\sum_i 
 
 at cost ``O(2^n)``. The proportions of assignments falling at or below and at or above the
 observed ``W^+`` are written ``q_{\le}`` and ``q_{\ge}``, and are what
-[§2.5](@ref "2.5 p-values") uses.
+[§2.3](@ref "2.3 p-values") uses.
 
 **What "conditional" means here.** The distribution just described is not the distribution
 of ``W^+`` over repeated samples from ``F``. It is the distribution over the ``2^n`` sign
 patterns with the observed absolute values, and therefore their midranks, held fixed at
 what was seen. Every probability in
-[§2.5](@ref "2.5 p-values") is computed in that fixed-``|d|`` distribution.
+[§2.3](@ref "2.3 p-values") is computed in that fixed-``|d|`` distribution.
 
 Two things make this the right object rather than a retreat from one. Under the null the
 signs are independent of ``|d|``, so fixing ``|d|`` discards nothing that bears on the
 null. And a test whose level is exactly ``\alpha`` for every possible value of ``|d|`` has
 level exactly ``\alpha`` when averaged over ``|d|``, which is the unconditional statement:
 conditional exactness is the stronger property, not a weaker substitute for it. That is
-also why the untied case of [§2.2](@ref "2.2 Exact null distribution, no ties") needs no
+also why the untied case of [§2.2.1](@ref "2.2.1 Exact, no ties") needs no
 such discussion. There the midranks are ``1, \dots, n`` whatever the data, so conditioning
 on them fixes nothing, and the two distributions coincide.
 
@@ -419,9 +436,8 @@ Discarding zeros ([§2.1](@ref "2.1 Model, estimand, statistic")) conditions in 
 same way, on which observations were non-zero, and is exact for the same reason.
 
 **Implementations.** This package computes this distribution itself, and reaches it on the
-routing set out at the head of
-[§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)"): every tied sample it
-accepts as exact comes here. The tied p-value of
+routing of [§2.2](@ref "2.2 Null distribution of the signed rank statistic"): every tied
+sample it accepts as exact comes here. The tied p-value of
 [§8.2](@ref "8.2 One sample, five zeros and ties among the rest") is computed this way.
 
 Nothing in StatsFuns covers the tied case, and base R declines it: `wilcox.test` warns that
@@ -429,7 +445,7 @@ it cannot compute an exact p-value with ties, or with zeros, and falls back on i
 approximation. R's `exactRankTests::wilcox.exact` does compute it, and one of the tied
 p-values in this package's test suite is taken from it.
 
-### 2.4 Normal approximation
+#### 2.2.3 Normal approximation
 
 ``W^+`` is asymptotically normal with the mean and variance of
 [§2.1](@ref "2.1 Model, estimand, statistic"). Write
@@ -441,9 +457,9 @@ p-values in this package's test suite is taken from it.
 
 for the centred statistic and the tie-corrected standard deviation. The variance
 correction is exact under the conditional distribution of
-[§2.3](@ref "2.3 Exact null distribution, ties present"), not an approximation to it.
+[§2.2.2](@ref "2.2.2 Exact, ties present"), not an approximation to it.
 
-### 2.5 p-values
+### 2.3 p-values
 
 Exact, no ties:
 
@@ -505,21 +521,11 @@ rank sum into the pair count of [§1.2](@ref "1.2 A worked ranking"), supported 
 and, divided by ``n_x n_y``, an estimate of
 ``P(X > Y) + \tfrac{1}{2} P(X = Y)``.
 
-**Which route applies.** As in
-[§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)"), and in the same order: the
-tie pattern chooses between the two exact routes,
-[§3.2](@ref "3.2 Exact null distribution, no ties") absent ties and
-[§3.3](@ref "3.3 Exact null distribution, ties present") under them, while
-[§3.4](@ref "3.4 Normal approximation") applies to any sample.
-`ExactMannWhitneyUTest` and `ApproximateMannWhitneyUTest` fix that choice, and
-`MannWhitneyUTest` selects: exact for ``N \le 10``, and for ``N \le 50`` when the pooled
-sample is untied; approximate above that. The only difference from the one-sample rule is
-the threshold, ``N \le 10`` where the signed rank test allows ``n \le 15``, because the
-enumeration here is over ``\binom{N}{\min(n_x, n_y)}`` assignments rather than ``2^n`` sign
-patterns. And ``N`` here counts every observation, since nothing is discarded
-([§3.1](@ref "3.1 Model, estimand, statistic")). The `method` keyword overrides the rule as
-it does in [§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)"), the callable
-here being passed `(; nx, ny, ties, tie_adjustment)`.
+The three subsections are those of
+[§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)"): the statistic
+([§3.1](@ref "3.1 Model, estimand, statistic")), its null distribution
+([§3.2](@ref "3.2 Null distribution of the Mann-Whitney statistic")), and the p-values
+([§3.3](@ref "3.3 p-values")).
 
 ### 3.1 Model, estimand, statistic
 
@@ -528,13 +534,13 @@ is ``F_x = F_y``, the two distributions equal and otherwise unrestricted.
 
 Equality is what makes the test exact, because it makes the ``N`` observations
 exchangeable: every assignment of the pooled midranks to the two samples is then equally
-likely, which is the whole of [§3.2](@ref "3.2 Exact null distribution, no ties") and
-[§3.3](@ref "3.3 Exact null distribution, ties present"). As in
+likely, which is the whole of [§3.2.1](@ref "3.2.1 Exact, no ties") and
+[§3.2.2](@ref "3.2.2 Exact, ties present"). As in
 [§2.1](@ref "2.1 Model, estimand, statistic"), continuity of ``F_x`` and ``F_y`` is a
 convenience: it makes ties events of probability zero, so the lattice distribution of
-[§3.2](@ref "3.2 Exact null distribution, no ties") applies. Discrete or mixed
+[§3.2.1](@ref "3.2.1 Exact, no ties") applies. Discrete or mixed
 distributions keep exactness through the conditional enumeration of
-[§3.3](@ref "3.3 Exact null distribution, ties present").
+[§3.2.2](@ref "3.2.2 Exact, ties present").
 
 Equality cannot be weakened to ``P(X > Y) = 1/2``. That weaker statement leaves ``F_x`` and
 ``F_y`` free to differ in spread, and then the pooled observations are no longer
@@ -571,11 +577,10 @@ H_1 : \Delta < 0 \quad (\texttt{tail = :left}), \qquad
 H_1 : \Delta > 0 \quad (\texttt{tail = :right}) ,
 ```
 
-small ``U`` being the evidence that ``x`` sits below ``y``. The endpoint naming is inverted
-for the interval in the same way, again
-[§6.5](@ref "6.5 One-sided intervals"). Testing ``\Delta = \Delta_0`` means running the
-procedure on ``x_i - \Delta_0`` against ``y``, which is the ``U(\Delta)`` of
-[§4.2](@ref "4.2 The counting identity").
+small ``U`` being the evidence that ``x`` sits below ``y``. The one-sided intervals of
+[§6.5](@ref "6.5 One-sided intervals") take the same names the same way. Testing
+``\Delta = \Delta_0`` means running the procedure on ``x_i - \Delta_0`` against ``y``, which
+is the ``U(\Delta)`` of [§4.2](@ref "4.2 The counting identity").
 
 **Statistic.** Rank the pooled sample of size ``N``. With ``R_i`` the midrank of ``x_i``,
 
@@ -624,7 +629,7 @@ negates and reverses both, taking the interval of
 
 That the two are interchangeable is what lets an implementation work with whichever is
 convenient, and this package uses the freedom: the tied enumeration of
-[§3.3](@ref "3.3 Exact null distribution, ties present") always enumerates the *smaller*
+[§3.2.2](@ref "3.2.2 Exact, ties present") always enumerates the *smaller*
 sample, since there are fewer subsets to visit, and swaps the two tails afterwards if that
 was ``y``.
 
@@ -638,7 +643,34 @@ variance ``\frac{n_x n_y}{N(N-1)}\sum_i (R_i - \bar R)^2``. Substituting
 \operatorname{Var}(U) = \frac{n_x n_y}{12}\left(N + 1 - \frac{T([x; y])}{N(N-1)}\right) .
 ```
 
-### 3.2 Exact null distribution, no ties
+### 3.2 Null distribution of the Mann-Whitney statistic
+
+The three routes of [§2.2](@ref "2.2 Null distribution of the signed rank statistic"), with
+the enumeration now over rank assignments rather than sign patterns. Write
+``B = \binom{N}{\min(n_x, n_y)}`` for the number of those assignments:
+
+|  | when it applies | the distribution | cost |
+|:---|:---|:---|:---|
+| [§3.2.1](@ref "3.2.1 Exact, no ties") | ``T([x; y]) = 0`` | exact, by a lattice recursion | ``O\bigl((n_x n_y)^2\bigr)`` |
+| [§3.2.2](@ref "3.2.2 Exact, ties present") | ``T([x; y]) > 0`` | exact, by enumerating the ``B`` assignments | ``O(B)`` |
+| [§3.2.3](@ref "3.2.3 Normal approximation") | any sample | normal, with the moments above | ``O(N)`` |
+
+**Choosing between them.** Exactly as in
+[§2.2](@ref "2.2 Null distribution of the signed rank statistic"): the tie pattern forces
+which exact route is available, and exact against approximate is a choice about cost.
+
+**In this package.** `ExactMannWhitneyUTest` and `ApproximateMannWhitneyUTest` fix the
+choice, `ExactMannWhitneyUTest` enumerating whenever the tie total is non-zero, and
+`MannWhitneyUTest` selects between them: exact for ``N \le 10``, and for ``N \le 50`` when
+the pooled sample is untied; approximate above that. The only difference from the one-sample
+rule is the threshold, ``N \le 10`` where the signed rank test allows ``n \le 15``, because
+the enumeration here is over assignments rather than sign patterns and grows faster. And
+``N`` counts every observation, since nothing is discarded
+([§3.1](@ref "3.1 Model, estimand, statistic")). `method` overrides the rule as it does in
+[§2.2](@ref "2.2 Null distribution of the signed rank statistic"), the callable here being
+passed `(; nx, ny, ties, tie_adjustment)`.
+
+#### 3.2.1 Exact, no ties
 
 Under the null all ``\binom{N}{n_x}`` assignments of pooled ranks to the two samples are
 equally likely. Let ``c_{n_x, n_y}(u)`` count those giving ``U = u``. Conditioning on
@@ -653,7 +685,7 @@ with ``c_{n_x, 0}(0) = c_{0, n_y}(0) = 1``, and ``c(u) = 0`` for ``u < 0`` or
 support is ``O\bigl((n_x n_y)^2\bigr)`` in time and ``O(n_x n_y)`` in space. Write
 ``G_{n_x,n_y}(u) = P(U \le u)``.
 
-The numerical caveat of [§2.2](@ref "2.2 Exact null distribution, no ties") applies with
+The numerical caveat of [§2.2.1](@ref "2.2.1 Exact, no ties") applies with
 more force: the normalising constant ``\binom{N}{n_x}`` exceeds ``2^{63}`` for balanced
 samples from ``n_x = n_y = 34``, where ``\binom{68}{34} \approx 2.85 \times 10^{19}``.
 
@@ -666,19 +698,19 @@ stated here is the one R uses, in the C routines `pwilcox`, `dwilcox` and `qwilc
 that the two agree is worth checking, and they do, to floating-point precision at every
 attainable ``u`` for ``n_x, n_y \le 7``.
 
-Ties are handled as in [§2.3](@ref "2.3 Exact null distribution, ties present"), by this
-package's own enumeration, reached on the routing at the head of
-[§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)"). Neither
-StatsFuns nor R offers it.
+Ties are handled as in [§2.2.2](@ref "2.2.2 Exact, ties present"), by this package's own
+enumeration, on the routing of
+[§3.2](@ref "3.2 Null distribution of the Mann-Whitney statistic"). Neither StatsFuns nor R
+offers it.
 
-### 3.3 Exact null distribution, ties present
+#### 3.2.2 Exact, ties present
 
-As in [§2.3](@ref "2.3 Exact null distribution, ties present"), the exact conditional null
+As in [§2.2.2](@ref "2.2.2 Exact, ties present"), the exact conditional null
 distribution is obtained by enumeration, here over the ``\binom{N}{\min(n_x, n_y)}``
 assignments of the observed midranks to the smaller sample, and the same three p-value
 formulas follow.
 
-### 3.4 Normal approximation
+#### 3.2.3 Normal approximation
 
 ``U`` is asymptotically normal with the mean and variance of
 [§3.1](@ref "3.1 Model, estimand, statistic"). Write
@@ -689,11 +721,11 @@ formulas follow.
 ```
 
 for the centred statistic and the tie-corrected standard deviation. As in
-[§2.4](@ref "2.4 Normal approximation"), the tie correction is exact under the conditional
-distribution of [§3.3](@ref "3.3 Exact null distribution, ties present") rather than an
+[§2.2.3](@ref "2.2.3 Normal approximation"), the tie correction is exact under the conditional
+distribution of [§3.2.2](@ref "3.2.2 Exact, ties present") rather than an
 approximation to it; what is approximate is only the normal shape.
 
-### 3.5 p-values
+### 3.3 p-values
 
 Exact, no ties:
 
@@ -707,14 +739,14 @@ The fold to the lower tail is exact, not an approximation: by the null symmetry 
 [§3.1](@ref "3.1 Model, estimand, statistic"),
 ``G(n_x n_y - U) = P(U' \ge U)``, so ``G(\min(U, n_x n_y - U))`` is the smaller of the two
 tails wherever ``U`` sits, the centre included. The clip is needed for the reason it is
-needed in [§2.5](@ref "2.5 p-values"): what can exceed ``1`` is the doubling, when ``U``
+needed in [§2.3](@ref "2.3 p-values"): what can exceed ``1`` is the doubling, when ``U``
 lands on ``n_x n_y / 2`` and that value carries an atom. At ``n_x = n_y = 2`` with
 ``U = 2`` the doubled tail is ``4/3``.
 
-Exact under ties, and the normal approximation: exactly as in [§2.5](@ref "2.5 p-values"),
+Exact under ties, and the normal approximation: exactly as in [§2.3](@ref "2.3 p-values"),
 with ``q_{\le}, q_{\ge}`` from
-[§3.3](@ref "3.3 Exact null distribution, ties present") and
-``\mu, \sigma`` from [§3.4](@ref "3.4 Normal approximation").
+[§3.2.2](@ref "3.2.2 Exact, ties present") and
+``\mu, \sigma`` from [§3.2.3](@ref "3.2.3 Normal approximation").
 
 Degenerate cases: if ``n_x = 0`` or ``n_y = 0`` there is no pair to compare, ``U = 0`` is
 the only attainable value, the null distribution is a point mass there, and all three exact
@@ -958,8 +990,8 @@ k = \max\bigl\{\, j \in \{0,\dots,\lfloor m/2 \rfloor\} \;:\; P(W \le j) < \alph
 ```
 
 taken as ``0`` when no such ``j`` exists, with ``P(W \le \cdot)`` the exact null CDF of
-[§2.2](@ref "2.2 Exact null distribution, no ties") or
-[§3.2](@ref "3.2 Exact null distribution, no ties").
+[§2.2.1](@ref "2.2.1 Exact, no ties") or
+[§3.2.1](@ref "3.2.1 Exact, no ties").
 
 By [§6.2](@ref "6.2 Inversion") the attained coverage is then
 ``1 - 2P(W \le k) > 1 - \alpha`` strictly, and the next narrower interval, at ``k+1``,
@@ -989,7 +1021,7 @@ lattice recursion of its own.
 
 The target is the exact critical value ``C_\alpha = \min\{j : P(W \le j) \ge \alpha/2\}``.
 The statistic is supported on a unit lattice, so with ``\mu_0`` the null **mean**, not
-the centred statistic of [§2.4](@ref "2.4 Normal approximation"),
+the centred statistic of [§2.2.3](@ref "2.2.3 Normal approximation"),
 
 ```math
 P(W \le j) \approx \Phi\!\left(\frac{j + 1/2 - \mu_0}{\sigma}\right) .
@@ -1006,7 +1038,7 @@ clamped to ``\{0,\dots,\lfloor m/2 \rfloor\}``. In both procedures ``\mu_0 = m/2
 one sample ``n(n+1)/4 = m/2``, for two ``n_x n_y / 2 = m/2``.
 
 ``\sigma`` is the tie-corrected standard deviation of
-[§2.4](@ref "2.4 Normal approximation") or [§3.4](@ref "3.4 Normal approximation"), so
+[§2.2.3](@ref "2.2.3 Normal approximation") or [§3.2.3](@ref "3.2.3 Normal approximation"), so
 unlike the exact construction this one does respond to ties.
 
 !!! note "The continuity correction is a choice, and both implementations make it"
@@ -1025,11 +1057,23 @@ reach the nominal level.
 
 A one-sided bound at level ``L`` is the corresponding endpoint of the two-sided interval
 at level ``2L - 1``; that is, the two-sided ``\alpha`` used is ``2(1-L)`` rather than
-``1-L``. The other endpoint is infinite:
+``1-L``. The other endpoint is infinite.
+
+Which of the two is kept follows the alternative the tail names, as in
+[§2.1](@ref "2.1 Model, estimand, statistic"): the alternative ``\theta < 0`` is compatible
+with an upper bound, so
 
 ```math
-\bigl(V_{(k+1)},\, \infty\bigr) \quad\text{or}\quad \bigl(-\infty,\, V_{(m-k)}\bigr) .
+\text{left} \;\longrightarrow\; \bigl(-\infty,\, V_{(m-k)}\bigr) ,
+\qquad
+\text{right} \;\longrightarrow\; \bigl(V_{(k+1)},\, \infty\bigr) .
 ```
+
+The endpoint kept is then the acceptance limit of the one-sided test of the same name, so
+`pvalue` and `confint` given the same tail describe the same alternative. This is the
+convention of [§7.1](@ref "7.1 One-sided intervals") of [The t-tests](@ref), of every other
+test in this package that takes a tail, and of R under `alternative = "less"` and
+`"greater"`. These four tests returned the other endpoint until JuliaStats/HypothesisTests.jl#368.
 
 ### 6.6 Zeros, ties, and degeneracy
 
@@ -1042,11 +1086,11 @@ count obtained by retaining the zeros). If every difference is zero, every pairw
 and the interval degenerates to the point ``0``.
 
 **Ties on the exact route.** [§6.3](@ref "6.3 Exact index") inverts the untied null
-distribution of [§2.2](@ref "2.2 Exact null distribution, no ties") or
-[§3.2](@ref "3.2 Exact null distribution, no ties"). Under ties the relevant null
+distribution of [§2.2.1](@ref "2.2.1 Exact, no ties") or
+[§3.2.1](@ref "3.2.1 Exact, no ties"). Under ties the relevant null
 distribution is the conditional one of
-[§2.3](@ref "2.3 Exact null distribution, ties present") or
-[§3.3](@ref "3.3 Exact null distribution, ties present"), so the attained coverage is
+[§2.2.2](@ref "2.2.2 Exact, ties present") or
+[§3.2.2](@ref "3.2.2 Exact, ties present"), so the attained coverage is
 approximate rather than exact. The classical construction retains the untied distribution;
 the alternative is to decline an exact interval under ties and fall back to
 [§6.4](@ref "6.4 Normal-approximation index").
@@ -1158,6 +1202,9 @@ julia> confint(t; level = 0.90)
 (4.449999999999999, 14.45)
 
 julia> confint(t; level = 0.95, tail = :left)
+(-Inf, 14.45)
+
+julia> confint(t; level = 0.95, tail = :right)
 (4.449999999999999, Inf)
 
 julia> confint(ApproximateSignedRankTest(d))
@@ -1175,10 +1222,12 @@ tables below and the tests in this package compare to a tolerance.
 | attained coverage | `0.95209`; at ``k=26`` it is `0.94464` |
 | approximate index ([§6.4](@ref "6.4 Normal-approximation index")) at ``1-\alpha = 0.95`` | ``\sigma = 17.60682``, ``C_\alpha = 25`` |
 
-The last two calls illustrate [§6.5](@ref "6.5 One-sided intervals"): the one-sided bound at
-``0.95`` is the lower endpoint of the two-sided interval at ``0.90``, and the approximate
-route moves the lower endpoint one order statistic outwards, from ``V_{(26)} = 3.3`` to
-``V_{(25)} = 3.05``.
+The one-sided calls illustrate [§6.5](@ref "6.5 One-sided intervals"): each bound at
+``0.95`` is an endpoint of the two-sided interval at ``0.90``, the upper one for
+`tail = :left` and the lower for `tail = :right`. The last call shows the approximate route
+moving the lower endpoint one order statistic outwards, from ``V_{(26)} = 3.3`` to
+``V_{(25)} = 3.05``; its upper endpoint is ``15.5`` either way, two of the Walsh averages
+there being equal.
 
 ### 8.2 One sample, five zeros and ties among the rest
 
@@ -1227,7 +1276,7 @@ julia> length(HypothesisTests.walsh_averages(filter(!iszero, d)))
 |---|---|
 | ``\hat\theta`` | `0.5` |
 | number of pairwise estimates ([§6.6](@ref "6.6 Zeros, ties, and degeneracy")) | `120` = ``15 \cdot 16 / 2``, against `210` = ``20 \cdot 21 / 2`` if zeros were retained |
-| two-sided p-value ([§2.5](@ref "2.5 p-values"), tied branch) | `0.30719`, by the enumeration of [§2.3](@ref "2.3 Exact null distribution, ties present") |
+| two-sided p-value ([§2.3](@ref "2.3 p-values"), tied branch) | `0.30719`, by the enumeration of [§2.2.2](@ref "2.2.2 Exact, ties present") |
 
 ### 8.3 Two samples, no ties
 
@@ -1330,16 +1379,15 @@ The one-sample procedure is [`SignedRankTest`](@ref), [`ExactSignedRankTest`](@r
 [§6.3](@ref "6.3 Exact index"), the `Approximate*` types
 [§6.4](@ref "6.4 Normal-approximation index"), and the dispatchers select between them by
 sample size and tie pattern unless the `method` keyword says otherwise. The two selection
-rules are stated in full at the head of
-[§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)") and
-[§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)").
+rules are stated in full in [§2.2](@ref "2.2 Null distribution of the signed rank statistic")
+and [§3.2](@ref "3.2 Null distribution of the Mann-Whitney statistic").
 
-`pvalue` implements [§2.5](@ref "2.5 p-values") and [§3.5](@ref "3.5 p-values"), `confint`
+`pvalue` implements [§2.3](@ref "2.3 p-values") and [§3.3](@ref "3.3 p-values"), `confint`
 implements [§6](@ref "6. Interval estimation"), and [`hodgeslehmann`](@ref) implements
 [§5](@ref "5. Point estimation").
 
-The exact null distributions of [§2.2](@ref "2.2 Exact null distribution, no ties") and
-[§3.2](@ref "3.2 Exact null distribution, no ties") come from StatsFuns, whose recursions
+The exact null distributions of [§2.2.1](@ref "2.2.1 Exact, no ties") and
+[§3.2.1](@ref "3.2.1 Exact, no ties") come from StatsFuns, whose recursions
 accumulated lattice counts in `Int` and overflowed silently past exactly the bounds those
 sections give, until JuliaStats/StatsFuns.jl#221 folded the normaliser into them. The
 `[compat]` floor of StatsFuns 2.2.1 is what makes the numerical care of those two sections
@@ -1357,12 +1405,12 @@ zeros included, which makes it the one number these tests report that the discar
 [§2.1](@ref "2.1 Model, estimand, statistic") does not reach. That field, rather than
 anything the procedure needs,
 is what makes an empty sample throw instead of returning the degenerate p-value of
-[§3.5](@ref "3.5 p-values"). And the pairwise estimates are materialised as written in
+[§3.3](@ref "3.3 p-values"). And the pairwise estimates are materialised as written in
 [§4.1](@ref "4.1 Definitions") rather than computed by selection as that section
 describes, which bounds the usable sample size; the
 bound is [`MAX_PAIRWISE_ESTIMATES`](@ref HypothesisTests.MAX_PAIRWISE_ESTIMATES), and the tied
-enumerations of [§2.3](@ref "2.3 Exact null distribution, ties present") and
-[§3.3](@ref "3.3 Exact null distribution, ties present") are bounded by
+enumerations of [§2.2.2](@ref "2.2.2 Exact, ties present") and
+[§3.2.2](@ref "3.2.2 Exact, ties present") are bounded by
 [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N).
 
 ## 10. References
