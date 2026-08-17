@@ -11,11 +11,11 @@ All three share their p-value ([§6](@ref "6. p-values")) and their confidence i
 ([§7](@ref "7. Confidence interval")); they differ only in what the estimate, the standard
 error, and the degrees of freedom are
 ([§3](@ref "3. One-sample")–[§5](@ref "5. Two samples, unequal variances (Welch)")).
-[§8](@ref "8. Worked values") gives worked values for checking an implementation.
+[§8](@ref "8. Worked values for the t-tests") gives worked values for checking an implementation.
 
 **In this package.** The one-sample test, and its paired form, is
 [`OneSampleTTest`](@ref); the two-sample tests are [`EqualVarianceTTest`](@ref) and
-[`UnequalVarianceTTest`](@ref). [§9](@ref "9. In this package") maps the specification
+[`UnequalVarianceTTest`](@ref). [§9](@ref "9. The t-tests in this package") maps the specification
 onto them and records where they depart from it.
 
 ## 1. Preliminaries and notation
@@ -186,7 +186,7 @@ bound, so
     [§6.5](@ref "6.5 One-sided intervals") of [Rank-based location inference](@ref). The
     rank behaviour predates these specifications and is not changed by them.
 
-## 8. Worked values
+## 8. Worked values for the t-tests
 
 Conformance vectors, printed to six decimal places.
 
@@ -244,7 +244,7 @@ variance.
 | ``t`` | `11.758942` |
 | interval, ``1-\alpha = 0.95`` | `(0.209982, 0.310018)` |
 
-## 9. In this package
+## 9. The t-tests in this package
 
 [§3](@ref "3. One-sample") is [`OneSampleTTest`](@ref), whose paired form
 [§3.1](@ref "3.1 Paired") is the two-argument method.

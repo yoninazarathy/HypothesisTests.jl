@@ -14,15 +14,15 @@ procedures in turn, each giving the statistic, its exact null distribution, the 
 approximation to it, and the p-value. The location inference is then common to both: the
 contrast sets it is read off ([§4](@ref "4. Contrast sets")), the Hodges-Lehmann point
 estimate ([§5](@ref "5. Point estimation")), and the confidence interval obtained by
-inverting either test ([§6](@ref "6. Interval estimation")). The rest gives the cost of
-each computation ([§7](@ref "7. Computational cost")), the relation to other
-implementations ([§8](@ref "8. Relation to other implementations")), and worked values for
-checking one ([§9](@ref "9. Worked values")).
+inverting either test ([§6](@ref "6. Interval estimation")). The rest relates the
+specification to other implementations
+([§7](@ref "7. Relation to other implementations")) and gives worked values for checking
+one ([§8](@ref "8. Worked values for the rank tests"))).
 
 **In this package.** The one-sample procedure is [`SignedRankTest`](@ref),
 [`ExactSignedRankTest`](@ref) and [`ApproximateSignedRankTest`](@ref); the two-sample
 procedure is [`MannWhitneyUTest`](@ref), [`ExactMannWhitneyUTest`](@ref) and
-[`ApproximateMannWhitneyUTest`](@ref). [§10](@ref "10. In this package") maps the
+[`ApproximateMannWhitneyUTest`](@ref). [§9](@ref "9. The rank tests in this package") maps the
 specification onto them and records where they depart from it.
 
 ## 1. Preliminaries and notation
@@ -303,14 +303,14 @@ and ``P(W^+ = w) = c_n(w) / 2^n``. Evaluating the recursion over the whole suppo
     propagating probabilities in place of counts. Exact arithmetic is the alternative.
 
     This package takes the first route, through `StatsFuns.signrankcdf`, and
-    [§10](@ref "10. In this package") records the version from which that holds.
+    [§9](@ref "9. The rank tests in this package") records the version from which that holds.
 
 **Implementations.** Here ``F_n`` is `StatsFuns.signrankcdf(n, w)`, with `signrankccdf`
 for the upper tail. R computes the same distribution in `psignrank`, `dsignrank` and
 `qsignrank`, C routines in its `nmath` library, which accumulate the counts ``c_n(w)`` in
 `double`: exact while they stay under ``2^{53}`` and approximate beyond, which is a
 different way out of the overflow above. The Julia values are tested against R's, as are
-the p-values and intervals of [§9](@ref "9. Worked values").
+the p-values and intervals of [§8](@ref "8. Worked values for the rank tests").
 
 ### 2.3 Exact null distribution, ties present
 
@@ -350,7 +350,7 @@ same way, on which observations were non-zero, and is exact for the same reason.
 selects that test automatically for tied data up to ``n = 15``, going to the normal
 approximation above it. `method = :exact` forces the route as far as
 [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N)`= 25`, past which
-it refuses rather than enumerate. The tied p-value of [§9](@ref "9. Worked values") is
+it refuses rather than enumerate. The tied p-value of [§8](@ref "8. Worked values for the rank tests") is
 computed this way.
 
 Nothing in StatsFuns covers the tied case, and base R declines it: `wilcox.test` warns that
@@ -645,6 +645,14 @@ is itself a member.
 D_{ij} = x_i - y_j , \qquad 1 \le i \le n_x, \ 1 \le j \le n_y .
 ```
 
+**Cost.** Both sets are quadratic in the sample size, and this specification forms them
+explicitly: ``m`` numbers, sorted. That is the binding constraint at scale, and it is
+avoidable, because the estimate of [§5](@ref "5. Point estimation") and the interval
+endpoints of [§6](@ref "6. Interval estimation") are order statistics. A selection
+algorithm returns them without materialising the set, exploiting the fact that the Walsh
+averages and the cross differences each form a sorted matrix. An implementation that
+materialises instead should bound the size it will accept.
+
 ### 4.2 The counting identity
 
 Let ``W^+(\theta)`` denote the statistic of [§2.1](@ref "2.1 Model, estimand, statistic")
@@ -703,7 +711,7 @@ without a shift model of the median of ``X - Y``. It is not
 again.
 
 Both statements about what these are *not* matter in practice, because the gap shows up on
-ordinary samples. On the one-sample data of [§9](@ref "9. Worked values"),
+ordinary samples. On the one-sample data of [§8](@ref "8. Worked values for the rank tests"),
 ``\hat\theta = 9.675`` against a sample median of ``10.1``. On a tied nine-against-nine
 two-sample set, ``\hat\Delta = 0.56`` against a difference of sample medians of ``0.62``.
 Equality holds only for exactly symmetric configurations.
@@ -830,7 +838,7 @@ whereas the quantile would index outside the contrast set.
 ``P(W \le j)`` is monotone in ``j``, so the condition holds on an initial segment of
 ``\{0, \dots, \lfloor m/2 \rfloor\}`` and ``k`` is its last member: a binary search finds it
 without evaluating the CDF at every index, which matters because each evaluation runs a
-lattice recursion. [§7](@ref "7. Computational cost") gives the cost.
+lattice recursion of its own.
 
 ### 6.4 Normal-approximation index
 
@@ -912,26 +920,16 @@ the alternative is to decline an exact interval under ties and fall back to
 
 **Degeneracy.** If ``P(W \le 0) \ge \alpha/2`` then ``k = 0`` and the widest available
 interval, ``(V_{(1)}, V_{(m)})``, does not attain the nominal level. Its coverage is
-``1 - 2^{1-n}`` in the untied one-sample case. An implementation should either return it
-with a warning or signal that the level is unattainable; returning it silently is a
-divergence worth documenting.
+``1 - 2^{1-n}`` in the untied one-sample case: ``0.75`` at ``n = 3``, ``0.875`` at
+``n = 4``, ``0.9375`` at ``n = 5``, so a ``0.95`` interval is unattainable below ``n = 6``
+and a ``0.99`` interval below ``n = 8``.
 
-## 7. Computational cost
+Returning that interval as though it met the request would misstate the coverage, so this
+package returns it and warns, naming the coverage actually attained. R warns in the same
+situation. The interval is still the best available, which is why it is returned rather
+than refused.
 
-| quantity | cost |
-|---|---|
-| statistic | ``O(N \log N)`` |
-| exact null distribution, no ties | [§2.2](@ref "2.2 Exact null distribution, no ties"), [§3.2](@ref "3.2 Exact null distribution, no ties"); polynomial, ``O(n^2)`` space |
-| exact null distribution, ties | ``O(2^n)`` or ``O\bigl(\binom{N}{\min(n_x,n_y)}\bigr)`` |
-| contrast set, as specified | ``O(m)`` space, ``O(m \log m)`` time; ``m`` is quadratic in the sample size |
-| interval index, exact | ``O(\log m)`` CDF evaluations |
-
-The quadratic contrast set is the binding constraint at scale. Both the estimator and the
-interval endpoints are order statistics, so a selection algorithm computes them without
-materialising the set; the standard approach exploits the fact that the Walsh averages and
-the cross differences form a sorted matrix.
-
-## 8. Relation to other implementations
+## 7. Relation to other implementations
 
 R's `wilcox.test(conf.int = TRUE)` is the usual reference. Where it takes its exact route
 it implements [§6.3](@ref "6.3 Exact index"), via the algorithm of
@@ -947,7 +945,7 @@ Three deliberate differences. The first two concern its approximate route:
     [§6.4](@ref "6.4 Normal-approximation index") does, but not the point estimate, which
     it also root-finds rather than taking as the median of the contrast set. Its reported
     estimate therefore drifts from ``\hat\theta``: `9.71184` against `9.675` on the sample
-    of [§9](@ref "9. Worked values").
+    of [§8](@ref "8. Worked values for the rank tests").
   - Under ties it declines an exact interval entirely and falls back to its approximate
     route, where [§6.6](@ref "6.6 Zeros, ties, and degeneracy") retains the classical
     construction instead.
@@ -959,12 +957,14 @@ Its route-selection rule differs too: R takes the exact route when each sample i
 and there are no ties. Comparisons against R must set its `exact` argument explicitly, or
 the two implementations may be running different constructions.
 
-## 9. Worked values
+## 8. Worked values for the rank tests
 
 Conformance vectors. Values are exact as printed unless a tolerance is implied by the
 digits shown.
 
-**One sample, ``n = 15``, no ties, no zeros.** ``d`` =
+### 8.1 One sample, no ties and no zeros
+
+``n = 15``, ``d`` =
 `[-7.8, -6.9, -4.7, 3.7, 6.5, 8.7, 9.1, 10.1, 10.8, 13.6, 14.4, 16.6, 20.2, 22.4, 23.5]`,
 ``m = 120``.
 
@@ -981,8 +981,9 @@ digits shown.
 The last two rows illustrate [§6.5](@ref "6.5 One-sided intervals"): the one-sided bound
 at ``0.95`` is the lower endpoint of the two-sided interval at ``0.90``.
 
-**One sample, ``N = 20`` with five zeros and ties among the rest.**
-``d`` = `[0, 0, 0, 0.5, 0.5, 1, -0.5, -1, 1.5, -1.5, 0.5, 0, 1, -0.5, 2, 0, 0.5, -1, 1, 0.5]`,
+### 8.2 One sample, five zeros and ties among the rest
+
+``N = 20``, ``d`` = `[0, 0, 0, 0.5, 0.5, 1, -0.5, -1, 1.5, -1.5, 0.5, 0, 1, -0.5, 2, 0, 0.5, -1, 1, 0.5]`,
 so ``n = 15`` and ``T(|d|) = 462``.
 
 | quantity | value |
@@ -992,8 +993,9 @@ so ``n = 15`` and ``T(|d|) = 462``.
 | exact, ``1-\alpha = 0.90`` | `(-0.25, 0.75)` |
 | two-sided p-value ([§2.5](@ref "2.5 p-values"), tied branch) | `0.30719` |
 
-**Two samples, no ties.** ``x`` = `1:10`, ``y`` = `2.1, 4.1, …, 20.1`; ``m = 100``,
-``U = 20``.
+### 8.3 Two samples, no ties
+
+``x`` = `1:10`, ``y`` = `2.1, 4.1, …, 20.1`; ``m = 100``, ``U = 20``.
 
 | quantity | value |
 |---|---|
@@ -1002,10 +1004,11 @@ so ``n = 15`` and ``T(|d|) = 462``.
 | ``P(U \le 23)``, ``P(U \le 24)`` | `0.021629`, `0.026213` |
 | attained coverage | `0.95674` |
 
-**Two samples, ties.** ``x`` = `1:10`, ``y`` = `2, 4, …, 24`. Exact at ``0.95``:
-`(-14.0, -1.0)`.
+### 8.4 Two samples, ties
 
-## 10. In this package
+``x`` = `1:10`, ``y`` = `2, 4, …, 24`. Exact at ``0.95``: `(-14.0, -1.0)`.
+
+## 9. The rank tests in this package
 
 The one-sample procedure is [`SignedRankTest`](@ref), [`ExactSignedRankTest`](@ref) and
 [`ApproximateSignedRankTest`](@ref); the two-sample procedure is
@@ -1029,22 +1032,21 @@ are bounded rather than corrected: see
 [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N) below.
 
 Departures from the specification, recorded here because
-[§8](@ref "8. Relation to other implementations") asks the same of other implementations.
-The degenerate case of [§6.6](@ref "6.6 Zeros, ties, and degeneracy") returns the widest
-interval silently rather than warning. Every test here carries a `median` field, the sample
+[§7](@ref "7. Relation to other implementations") asks the same of other implementations.
+Every test here carries a `median` field, the sample
 median for the signed rank tests and the difference of sample medians for the Mann-Whitney
 ones. Both are descriptive statistics rather than the estimand of
 [§5](@ref "5. Point estimation"), and that field, rather than anything the procedure needs,
 is what makes an empty sample throw instead of returning the degenerate p-value of
 [§3.5](@ref "3.5 p-values"). And the contrast set is materialised as written in
-[§4](@ref "4. Contrast sets") rather than computed by selection as
-[§7](@ref "7. Computational cost") describes, which bounds the usable sample size; the
+[§4.1](@ref "4.1 Definitions") rather than computed by selection as that section
+describes, which bounds the usable sample size; the
 bound is [`MAX_RANK_CONTRASTS`](@ref HypothesisTests.MAX_RANK_CONTRASTS), and the tied
 enumerations of [§2.3](@ref "2.3 Exact null distribution, ties present") and
 [§3.3](@ref "3.3 Exact null distribution, ties present") are bounded by
 [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N).
 
-## 11. References
+## 10. References
 
 Both procedures originate with [Wilcoxon (1945)](@cite wilcoxon1945), which introduced the
 signed rank and the rank sum tests together; [Mann and Whitney (1947)](@cite mann1947)
