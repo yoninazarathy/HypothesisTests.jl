@@ -179,7 +179,9 @@ bound, so
 \text{right} \;\longrightarrow\; \bigl(\hat\delta - t_{\nu, L}\,\mathrm{SE},\; \infty\bigr) .
 ```
 
-This is the convention R uses, under `alternative = "less"` and `"greater"`.
+This is the convention R uses, under `alternative = "less"` and `"greater"`, and the one
+every test in this package follows, the rank tests included: see
+[§6.5](@ref "6.5 One-sided intervals") of [Rank-based location inference](@ref).
 
 ## 8. Worked values for the t-tests
 
@@ -386,8 +388,7 @@ accept `μ0` as a trailing positional argument, and [§3](@ref "3. One-sample") 
 [§4](@ref "4. Two samples, equal variances (Student)") additionally accept summary
 statistics (mean, standard deviation or variance, and count) in place of the data.
 
-The departure from this specification is the one-sided interval convention of
-[§7.1](@ref "7.1 One-sided intervals"), which is correct here but not in the rank tests.
+There is no departure from this specification to record.
 
 ## 10. References
 

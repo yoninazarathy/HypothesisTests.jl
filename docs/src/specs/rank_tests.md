@@ -196,8 +196,9 @@ three, in the same order, for the two-sample statistic.
 **Model.** The ``d_i`` are independent. The null hypothesis is that each is symmetric
 about ``0``, meaning ``P(d_i > t) = P(d_i < -t)`` for every ``t``.
 
-That is the whole of what [§2.2.1](@ref "2.2.1 Exact, no ties")–[§2.3](@ref "2.3 p-values")
-use: symmetry about ``0`` makes the signs independent of ``|d|`` and each ``\pm`` with
+That is the whole of what [§2.2](@ref "2.2 Null distribution of the signed rank statistic")
+and [§2.3](@ref "2.3 p-values") use: symmetry about ``0`` makes the signs independent of
+``|d|`` and each ``\pm`` with
 probability ``1/2``, and every null distribution below follows from that alone. In
 particular the ``d_i`` need not be identically distributed for the null distribution to
 hold, though [§5](@ref "5. Point estimation") and [§6](@ref "6. Interval estimation") do
@@ -296,8 +297,11 @@ from the ranking the sum is over, which is what makes the discard above total. U
 Pratt's convention it would be the other way round, present in the ranking and left out of
 the sum.
 
-Its support is ``\{0, 1, \dots, n(n+1)/2\}``, and under the null it is symmetric about
-``n(n+1)/4``.
+It runs from ``0``, every retained observation negative, to ``n(n+1)/2``, every one
+positive, and is symmetric about ``n(n+1)/4`` under the null. Absent ties it takes integer
+values, so the support is ``\{0, 1, \dots, n(n+1)/2\}``; under ties the midranks are
+half-integers and so is ``W^+``. At ``n = 2`` with the two absolute values equal, both
+midranks are ``1.5`` and the support is ``\{0,\, 1.5,\, 3\}``.
 
 Under the null the signs are independent of ``|d|`` and each ``\pm`` with probability
 ``1/2``, so conditionally on the midranks ``W^+ = \sum_i R_i B_i`` with
@@ -616,8 +620,9 @@ sort of the pooled sample; the second is the definition the inversion of
 ``\{0, \tfrac{1}{2}, \dots, n_x n_y\}``, integer-valued absent ties, symmetric under the
 null about ``n_x n_y / 2``.
 
-**Which sample is called ``x``.** The labelling fixes the sign of what is estimated, and
-nothing else. Write ``U_x`` for the statistic above and ``U_y`` for the one obtained by
+**Which sample is called ``x``.** The labelling fixes the sign of what is estimated and
+which tail is which; nothing that is tested depends on it. Write ``U_x`` for the statistic
+above and ``U_y`` for the one obtained by
 exchanging the roles of the two samples. Every pair ``(i,j)`` is counted once between them,
 as ``x_i > y_j``, as ``y_j > x_i``, or as a tie splitting half to each, so
 
@@ -871,6 +876,15 @@ itself one of the pairwise estimates, which is almost surely the case under cont
 ``F`` and is the only case [§6.2](@ref "6.2 Inversion") needs. Both functions are
 non-increasing in their argument and change value only at pairwise estimates.
 
+Where ``\theta`` *is* one of them, two cases separate. If ``\theta = (d_i + d_j)/2`` for
+``i \ne j``, the identity still describes what the procedure computes on ``d - \theta``: that
+sample has ``\lvert d_i - \theta \rvert = \lvert d_j - \theta \rvert`` with opposite signs, and
+the midrank the pair shares splits exactly as the half-count does. If ``\theta = d_i``, it
+does not: ``d_i - \theta`` is zero, so [§2.1](@ref "2.1 Model, estimand, statistic") discards
+it and the remaining ``n-1`` observations are re-ranked. On ``d = (1, 2, 4)`` at
+``\theta = 2`` the identity gives ``3.5`` and the procedure gives ``2``.
+[§6.2.1](@ref "6.2.1 What happens at the endpoints") is where this matters.
+
 *Proof of the first, for ``\theta`` not itself a pairwise estimate and ``|d|`` untied.*
 ``R_i = \#\{j : |d_j| \le |d_i|\}``, so
 ``W^+ = \sum_{i : d_i > 0} \#\{j : |d_j| \le |d_i|\}``. A pair ``\{i, j\}`` is counted
@@ -910,8 +924,9 @@ without a shift model of the median of ``X - Y``. It is not
 again.
 
 Both statements about what these are *not* matter in practice, because the gap shows up on
-ordinary samples. On the one-sample data of [§8](@ref "8. Worked values for the rank tests"),
-``\hat\theta = 9.675`` against a sample median of ``10.1``. On a tied nine-against-nine
+ordinary samples. On the one-sample data of
+[§8.1](@ref "8.1 One sample, no ties and no zeros"), ``\hat\theta = 9.675`` against a sample
+median of ``10.1``. On a tied nine-against-nine
 two-sample set, ``\hat\Delta = 0.56`` against a difference of sample medians of ``0.62``.
 Exact symmetry makes each pair agree, but the converse fails: ``d = (1, 3, 3, 8)`` is
 symmetric about nothing, and its ten Walsh averages
@@ -1015,18 +1030,16 @@ continuous symmetric case that the equality describes.
 
 The derivation above holds for ``\theta`` that is not one of the pairwise estimates, and the
 two endpoints are pairwise estimates by construction. Whether they belong to the interval is
-therefore not settled by it, and there are two reasons not to settle it by taking a closure.
+therefore not settled by it, and taking the closure would assert more than the derivation
+supports.
 
-At ``\theta`` equal to a pairwise estimate the half-count of
-[§4.2](@ref "4.2 The counting identity") is in force, so ``W^+(\theta)`` can take a value the
-null lattice does not carry. Worse, the sample that a procedure actually tests at that
-``\theta``, namely ``d_i - \theta``, is no longer untied: if ``\theta = (d_i + d_j)/2`` for
-``i \ne j`` then ``d_i - \theta`` and ``d_j - \theta`` are equal in absolute value and
-opposite in sign, and if ``\theta = d_i`` then ``d_i - \theta = 0``. So the p-value at exactly
-an endpoint comes from the tied conditional distribution of
-[§2.2.2](@ref "2.2.2 Exact, ties present"), or from a sample one observation shorter, rather
-than from the untied distribution the interval inverted. The two need not agree about that
-point.
+At such a ``\theta`` the sample actually tested, ``d - \theta``, is not the untied sample the
+interval was read off. As [§4.2](@ref "4.2 The counting identity") sets out,
+``\theta = (d_i + d_j)/2`` with ``i \ne j`` leaves two shifted observations equal in absolute
+value and opposite in sign, so the p-value there comes from the tied conditional distribution
+of [§2.2.2](@ref "2.2.2 Exact, ties present"); and ``\theta = d_i`` leaves one of them zero,
+so it comes from a sample one observation shorter. Neither is the distribution whose quantile
+fixed ``k``, so neither need agree with the interval about that point.
 
 They do not on the sample of [§8.1](@ref "8.1 One sample, no ties and no zeros"). Its exact
 ``0.95`` interval is ``(3.3, 15.5)``, and testing ``\theta`` at each endpoint gives
@@ -1135,25 +1148,27 @@ The endpoint kept is then the acceptance limit of the one-sided test of the same
 `pvalue` and `confint` given the same tail describe the same alternative. This is the
 convention of [§7.1](@ref "7.1 One-sided intervals") of [The t-tests](@ref), of every other
 test in this package that takes a tail, and of R under `alternative = "less"` and
-`"greater"`. These four tests returned the other endpoint until JuliaStats/HypothesisTests.jl#368.
+`"greater"`. These four tests returned the other endpoint until
+[issue #368](https://github.com/JuliaStats/HypothesisTests.jl/issues/368).
 
 ### 6.6 Zeros, ties, and degeneracy
 
 **Zeros.** By [§2.1](@ref "2.1 Model, estimand, statistic") the one-sample statistic is
-computed from the ``n`` non-zero differences. The pairwise estimates must be formed from
-the same ``n`` observations, or the p-value and the interval describe different samples. For a
-20-point sample containing five zeros there are 120 pairwise estimates
-(``m = n(n+1)/2`` with ``n = 15``), not 210 (which is ``N(N+1)/2`` with ``N = 20``, the
-count obtained by retaining the zeros). If every difference is zero, every pairwise estimate is zero
-and the interval degenerates to the point ``0``.
+computed from the ``n`` non-zero differences. The pairwise estimates must be formed from the
+same ``n`` observations, or the p-value and the interval describe different samples. For a
+20-point sample containing five zeros there are 120 of them (``m = n(n+1)/2`` with
+``n = 15``), not 210 (which is ``N(N+1)/2`` with ``N = 20``, the count obtained by retaining
+the zeros). If every difference is zero, every pairwise estimate is zero and the interval
+degenerates to the point ``0``.
 
 **Ties on the exact route.** [§6.3](@ref "6.3 Exact index") inverts the untied null
 distribution of [§2.2.1](@ref "2.2.1 Exact, no ties") or
 [§3.2.1](@ref "3.2.1 Exact, no ties"). Under ties the relevant null
 distribution is the conditional one of
 [§2.2.2](@ref "2.2.2 Exact, ties present") or
-[§3.2.2](@ref "3.2.2 Exact, ties present"), so the attained coverage is
-approximate rather than exact. The classical construction retains the untied distribution;
+[§3.2.2](@ref "3.2.2 Exact, ties present"), so the attained coverage is approximate rather
+than exact, and by the first bullet of [§6.2](@ref "6.2 Inversion") it errs above the nominal
+level rather than below. The classical construction retains the untied distribution;
 the alternative is to decline an exact interval under ties and fall back to
 [§6.4](@ref "6.4 Normal-approximation index").
 
@@ -1193,7 +1208,7 @@ Three deliberate differences. The first two concern its approximate route:
     [§6.4](@ref "6.4 Normal-approximation index") does, but not the point estimate, which
     it also root-finds rather than taking as the median of the pairwise estimates. Its reported
     estimate therefore drifts from ``\hat\theta``: `9.71184` against `9.675` on the sample
-    of [§8](@ref "8. Worked values for the rank tests").
+    of [§8.1](@ref "8.1 One sample, no ties and no zeros").
   - Under ties it declines an exact interval entirely and falls back to its approximate
     route, where [§6.6](@ref "6.6 Zeros, ties, and degeneracy") retains the classical
     construction instead.
@@ -1201,9 +1216,13 @@ Three deliberate differences. The first two concern its approximate route:
 It also warns and substitutes a lower-coverage interval in the degenerate case of
 [§6.6](@ref "6.6 Zeros, ties, and degeneracy").
 
-Its route-selection rule differs too: R takes the exact route when each sample is under 50
-and there are no ties. Comparisons against R must set its `exact` argument explicitly, or
-the two implementations may be running different constructions.
+Its route-selection rule differs too. R takes the exact route when the sample is under 50,
+each of the two for the rank sum test, and there are no ties, and for the signed rank test no
+zeros either; this package instead lowers the size threshold under ties rather than abandoning
+the exact route, as [§2.2](@ref "2.2 Null distribution of the signed rank statistic") and
+[§3.2](@ref "3.2 Null distribution of the Mann-Whitney statistic") set out. Comparisons
+against R must therefore set its `exact` argument explicitly, or the two implementations may
+be running different constructions.
 
 ## 8. Worked values for the rank tests
 
@@ -1390,8 +1409,8 @@ julia> confint(t)
 
 ``x`` = `1:10`, ``y`` = `2, 4, …, 24`, so ``N = 22`` and five values are tied across the
 samples. Here ``N > 10``, so the routing of
-[§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)") sends tied data
-this size to the approximate test, and `method = :exact` is what reaches the exact one.
+[§3.2](@ref "3.2 Null distribution of the Mann-Whitney statistic") sends tied data this size
+to the approximate test, and `method = :exact` is what reaches the exact one.
 
 ```jldoctest rank4
 julia> using HypothesisTests
@@ -1427,10 +1446,11 @@ julia> confint(MannWhitneyUTest(y, x; method = :exact))
 ```
 
 On this sample the two routes agree: the normal index lands on the same pair of order
-statistics, which is the behaviour [§7](@ref "7. Relation to other implementations") reports
-of R as well. The last call is the sample exchange of
-[§3.1](@ref "3.1 Model, estimand, statistic"): the interval negates and reverses, and the
-two-sided p-value does not move.
+statistics. R declines an exact interval under ties altogether
+([§7](@ref "7. Relation to other implementations")) and solves numerically on its approximate
+route, which lands here too, reporting `(-13.99997, -1.00003)` for the same pair. The last
+call is the sample exchange of [§3.1](@ref "3.1 Model, estimand, statistic"): the interval
+negates and reverses, and the two-sided p-value does not move.
 
 ## 9. The rank tests in this package
 
@@ -1449,31 +1469,35 @@ implements [§6](@ref "6. Interval estimation"), and [`hodgeslehmann`](@ref) imp
 [§5](@ref "5. Point estimation").
 
 The exact null distributions of [§2.2.1](@ref "2.2.1 Exact, no ties") and
-[§3.2.1](@ref "3.2.1 Exact, no ties") come from StatsFuns, whose recursions
-accumulated lattice counts in `Int` and overflowed silently past exactly the bounds those
-sections give, until JuliaStats/StatsFuns.jl#221 folded the normaliser into them. The
-`[compat]` floor of StatsFuns 2.2.1 is what makes the numerical care of those two sections
-a settled question here rather than a caveat. The tied routes are this package's own, and
-are bounded rather than corrected: see
-[`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N) below.
+[§3.2.1](@ref "3.2.1 Exact, no ties") come from StatsFuns, whose recursions accumulated
+lattice counts in `Int` and overflowed silently past exactly the bounds those sections give,
+until [StatsFuns.jl#221](https://github.com/JuliaStats/StatsFuns.jl/pull/221) folded the
+normaliser into them. The `[compat]` floor of StatsFuns 2.2.1 is what makes the numerical care
+of those two sections a settled question here rather than a caveat. The tied routes are this
+package's own, and are bounded rather than corrected.
 
-Departures from the specification, recorded here because
+**Departures from this specification**, recorded here because
 [§7](@ref "7. Relation to other implementations") asks the same of other implementations.
-Every test here carries a `median` field, the sample
-median for the signed rank tests and the difference of sample medians for the Mann-Whitney
-ones. Both are descriptive statistics rather than the estimand of
-[§5](@ref "5. Point estimation"). The signed rank one is taken over all ``N`` differences,
-zeros included, which makes it the one number these tests report that the discard of
-[§2.1](@ref "2.1 Model, estimand, statistic") does not reach. That field, rather than
-anything the procedure needs,
-is what makes an empty sample throw instead of returning the degenerate p-value of
-[§3.3](@ref "3.3 p-values"). And the pairwise estimates are materialised as written in
-[§4.1](@ref "4.1 Definitions") rather than computed by selection as that section
-describes, which bounds the usable sample size; the
-bound is [`MAX_PAIRWISE_ESTIMATES`](@ref HypothesisTests.MAX_PAIRWISE_ESTIMATES), and the tied
-enumerations of [§2.2.2](@ref "2.2.2 Exact, ties present") and
-[§3.2.2](@ref "3.2.2 Exact, ties present") are bounded by
-[`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N).
+
+  - Every test carries a `median` field: the sample median for the signed rank tests, the
+    difference of sample medians for the Mann-Whitney ones. Both are descriptive statistics
+    rather than the estimand of [§5](@ref "5. Point estimation"), which is reported separately
+    and is what the interval is built around. The signed rank one is taken over all ``N``
+    differences, zeros included, so it is the one number these tests report that the discard
+    of [§2.1](@ref "2.1 Model, estimand, statistic") does not reach. It is also that field,
+    rather than anything the procedure needs, that makes an empty sample throw instead of
+    returning the degenerate p-value of [§3.3](@ref "3.3 p-values").
+  - The pairwise estimates are materialised as written in
+    [§4.1](@ref "4.1 Definitions") rather than found by selection as that section describes,
+    which bounds the usable sample size at
+    [`MAX_PAIRWISE_ESTIMATES`](@ref HypothesisTests.MAX_PAIRWISE_ESTIMATES) of them.
+  - The tied enumerations of [§2.2.2](@ref "2.2.2 Exact, ties present") and
+    [§3.2.2](@ref "3.2.2 Exact, ties present") are bounded by
+    [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N), past which the
+    p-value is refused rather than computed.
+  - Under ties an `Exact*` test enumerates for its p-value but inverts the untied lattice for
+    its interval, so the two disagree about ties. That is the classical construction, and
+    [§6.6](@ref "6.6 Zeros, ties, and degeneracy") says which way it errs.
 
 ## 10. References
 
