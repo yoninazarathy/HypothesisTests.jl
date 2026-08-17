@@ -28,8 +28,8 @@ specification onto them and records where they depart from it.
 
 ## 1. Preliminaries and notation
 
-| | |
-|---|---|
+| symbol | meaning |
+|:---|:---|
 | ``d_1, \dots, d_N`` | the one-sample input; for paired data ``d_i = x_i - y_i`` |
 | ``n`` | the number of ``d_i`` with ``d_i \ne 0`` |
 | ``x_1, \dots, x_{n_x}``, ``y_1, \dots, y_{n_y}`` | the two-sample inputs |
@@ -129,7 +129,7 @@ the two ``0.7`` occupy positions ``1`` and ``2``, the two ``2.1`` occupy ``4`` a
 and each takes the average of the positions it spans.
 
 | ``d_i`` | ``2.1`` | ``-0.7`` | ``0`` | ``1.4`` | ``-2.1`` | ``0.7`` |
-|---|---|---|---|---|---|---|
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|
 | ``\lvert d_i \rvert`` | ``2.1`` | ``0.7`` | discarded | ``1.4`` | ``2.1`` | ``0.7`` |
 | midrank ``R_i`` | ``4.5`` | ``1.5`` | | ``3`` | ``4.5`` | ``1.5`` |
 | counted in ``W^+`` | yes | no | | yes | no | yes |
@@ -154,7 +154,7 @@ two samples are pooled before ranking, and the tie falls *across* them: the two 
 share positions ``4`` and ``5``.
 
 | pooled value | ``1.5`` | ``2.2`` | ``2.8`` | ``3.7`` | ``3.7`` | ``4.2`` | ``4.9`` | ``5.4`` | ``6.1`` |
-|---|---|---|---|---|---|---|---|---|---|
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | from | ``x`` | ``x`` | ``y`` | ``x`` | ``y`` | ``x`` | ``y`` | ``x`` | ``y`` |
 | midrank | ``1`` | ``2`` | ``3`` | ``4.5`` | ``4.5`` | ``6`` | ``7`` | ``8`` | ``9`` |
 
@@ -1359,7 +1359,7 @@ The summary rounds the endpoints; `confint` returns them as computed, which is w
 tables below and the tests in this package compare to a tolerance.
 
 | quantity | value |
-|---|---|
+|:---|:---|
 | ``\hat\theta`` ([§5](@ref "5. Point estimation")) | `9.675` |
 | median of ``d``, for comparison | `10.1` |
 | exact index ([§6.3](@ref "6.3 Exact index")) at ``1-\alpha = 0.95`` | ``k = 25``, ``C_\alpha = 26`` |
@@ -1417,7 +1417,7 @@ julia> length(HypothesisTests.walsh_averages(filter(!iszero, d)))
 ```
 
 | quantity | value |
-|---|---|
+|:---|:---|
 | ``\hat\theta`` | `0.5` |
 | number of pairwise estimates ([§6.6](@ref "6.6 Zeros, ties, and degeneracy")) | `120` = ``15 \cdot 16 / 2``, against `210` = ``20 \cdot 21 / 2`` if zeros were retained |
 | two-sided p-value ([§2.3](@ref "2.3 p-values"), tied branch) | `0.30719`, by the enumeration of [§2.2.2](@ref "2.2.2 Exact, ties present") |
@@ -1462,7 +1462,7 @@ julia> confint(t)
 ```
 
 | quantity | value |
-|---|---|
+|:---|:---|
 | ``\hat\Delta`` | `-5.6` |
 | exact index at ``1-\alpha = 0.95`` | ``k = 23``, ``C_\alpha = 24`` |
 | ``P(U \le 23)``, ``P(U \le 24)`` | `0.021629`, `0.026213` |

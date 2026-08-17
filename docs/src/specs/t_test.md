@@ -20,9 +20,9 @@ onto them and records where they depart from it.
 
 ## 1. Preliminaries and notation
 
-| | |
-|---|---|
-| ``x_1, \dots, x_{n}`` | the one-sample input; for paired data ``x_i - y_i`` |
+| symbol | meaning |
+|:---|:---|
+| ``x_1, \dots, x_{n}`` | the one-sample input; for paired data these are the differences ``x_i - y_i`` |
 | ``x_1, \dots, x_{n_x}``, ``y_1, \dots, y_{n_y}`` | the two-sample inputs |
 | ``\bar x`` | the sample mean ``\frac{1}{n}\sum_i x_i`` |
 | ``s^2`` | the unbiased sample variance ``\frac{1}{n-1}\sum_i (x_i - \bar x)^2`` |
@@ -34,8 +34,10 @@ onto them and records where they depart from it.
 | ``T_\nu`` | Student's ``t`` distribution on ``\nu`` degrees of freedom |
 | ``t_{\nu, q}`` | its ``q`` quantile |
 
-Note that ``s^2`` carries the ``n-1`` denominator throughout. Substituting the ``n``
-denominator changes every statistic on this page.
+Note that ``s^2`` carries the ``n-1`` denominator throughout. The sample variance is
+sometimes defined with an ``n`` denominator instead; an implementation that uses that
+form will disagree with every standard error, statistic, p-value and interval on this
+page, which makes it the first thing to check when conformance fails.
 
 ## 2. Model and estimand
 
@@ -45,16 +47,14 @@ nuisance parameter, estimated from the data, and it is that estimation which pro
 ``t`` rather than a normal reference distribution.
 
 **Estimand.** The population mean ``\mu`` for the one-sample test, and the difference of
-population means ``\mu_x - \mu_y`` for the two-sample tests. Unlike the rank procedures of
-[Rank-based location inference](@ref), the estimand here is a mean, the estimator is the
-corresponding sample mean, and no distinction between the two arises.
+population means ``\mu_x - \mu_y`` for the two-sample tests.
 
 **Null hypothesis.** That the estimand equals ``\mu_0``, which defaults to ``0``.
 
 **What each test assumes.**
 
 | test | assumes |
-|---|---|
+|:---|:---|
 | one-sample ([§3](@ref "3. One-sample")) | normality of the ``x_i`` |
 | paired ([§3.1](@ref "3.1 Paired")) | normality of the *differences*, not of either sample |
 | Student ([§4](@ref "4. Two samples, equal variances (Student)")) | normality of both samples, and ``\sigma_x^2 = \sigma_y^2`` |
@@ -84,10 +84,7 @@ The paired test is not a separate procedure: it is [§3](@ref "3. One-sample") a
 the differences ``d_i = x_i - y_i``, which requires the two inputs to be of equal length
 and in corresponding order. Since ``\overline{x-y} = \bar x - \bar y``, the estimate
 agrees with the two-sample one; the standard error does not, because pairing removes the
-between-subject variance from it. Pairing is a property of the data, not a choice:
-applying [§4](@ref "4. Two samples, equal variances (Student)") or
-[§5](@ref "5. Two samples, unequal variances (Welch)") to paired data discards the pairing
-and inflates the standard error.
+between-subject variance from it. Pairing is a property of the data.
 
 ## 4. Two samples, equal variances (Student)
 
@@ -130,14 +127,6 @@ variance estimator:
 ``\nu > 0``. It satisfies ``\min(n_x, n_y) - 1 \le \nu \le n_x + n_y - 2``, reaching the
 upper bound when the two variance estimates and sample sizes coincide.
 
-!!! note "Welch is the better default"
-    Welch's test is close to Student's when the variances are close, and remains valid when
-    they are not, so it is the safer default and is what R's `t.test` uses unless told
-    otherwise. Student's test is anticonservative when the smaller sample has the larger
-    variance, and conservative in the reverse case. Choosing between them by first testing
-    for equal variances is not recommended: the two-stage procedure does not have the
-    nominal size.
-
 ## 6. p-values
 
 Identical for all three, with ``\nu`` and ``t`` from the relevant section. Writing ``F``
@@ -150,8 +139,8 @@ p_{\text{both}} = 2\bigl(1 - F(|t|)\bigr) .
 ```
 
 The two-sided form uses the symmetry of ``T_\nu`` about zero and needs no clipping, since
-``F(|t|) \ge 1/2``. `left` is the alternative ``\mu < \mu_0`` and `right` the alternative
-``\mu > \mu_0``.
+``F(|t|) \ge 1/2``. `left` is the alternative that the estimand lies below ``\mu_0``, and
+`right` that it lies above.
 
 ## 7. Confidence interval
 
@@ -163,8 +152,7 @@ Since ``t`` is monotone in ``\mu_0``, that set is the interval
 ```
 
 symmetric about the estimate and independent of ``\mu_0``. Its coverage is exact under the
-model, with no discreteness penalty, unlike the rank intervals, which can only attain a
-finite set of levels.
+model.
 
 ### 7.1 One-sided intervals
 
@@ -185,12 +173,14 @@ every test in this package follows, the rank tests included: see
 
 ## 8. Worked values for the t-tests
 
-Conformance vectors, printed to six decimal places. The sessions are run when this page is
+Conformance vectors; the table values are printed to six decimal places. The sessions are run when this page is
 built, so what is shown is what the package returns; the tables give the intermediate
-quantities that no printed output shows. One sample serves all four tests:
+quantities that no printed output shows. One pair of samples serves the first three tests:
 
 ``x`` = `[5.1, 4.9, 6.2, 5.8, 5.3, 6.1, 5.5, 5.9, 4.7, 6.0]`, ``n_x = 10``;
 ``y`` = `[4.8, 5.2, 4.5, 5.0, 4.9, 5.4, 4.6, 5.1]`, ``n_y = 8``.
+
+The paired test needs a partner of equal length, so it gets its own pair below.
 
 ```jldoctest ttest
 julia> using HypothesisTests
@@ -201,8 +191,8 @@ julia> y = [4.8, 5.2, 4.5, 5.0, 4.9, 5.4, 4.6, 5.1];
 ```
 
 **One sample against ``\mu_0 = 5``** ([§3](@ref "3. One-sample")). ``\bar x = 5.55``,
-``s = 0.529675``. The null value is the trailing positional argument, so a different
-``\mu_0`` is a different call rather than a different sample.
+``s = 0.529675``. The null value is the trailing positional argument, so testing a
+different ``\mu_0`` is a new call on the same data.
 
 ```jldoctest ttest
 julia> t = OneSampleTTest(x, 5)
@@ -239,7 +229,7 @@ julia> confint(t; level = 0.90)
 ```
 
 | quantity | value |
-|---|---|
+|:---|:---|
 | ``\mathrm{SE}`` | `0.167498` |
 | ``\nu`` | `9` |
 | ``t`` | `3.283623` |
@@ -282,7 +272,7 @@ julia> confint(t)
 ```
 
 | quantity | value |
-|---|---|
+|:---|:---|
 | ``\mathrm{SE}`` | `0.210927` |
 | ``\nu`` | `16` |
 | ``t`` | `2.903847` |
@@ -319,7 +309,7 @@ julia> confint(t)
 ```
 
 | quantity | value |
-|---|---|
+|:---|:---|
 | ``\mathrm{SE}`` | `0.198650` |
 | ``\nu`` | `14.684902` |
 | ``t`` | `3.083313` |
@@ -330,14 +320,23 @@ Note ``\nu`` between ``\min(n_x,n_y) - 1 = 7`` and ``n_x + n_y - 2 = 16``, and t
 interval narrower here than the Student one, because the larger sample carries the larger
 variance.
 
-**Paired** ([§3.1](@ref "3.1 Paired")), ``x`` against
-``z`` = `[5.0, 4.6, 6.0, 5.5, 5.1, 5.8, 5.2, 5.6, 4.4, 5.7]`. The two-argument
-`OneSampleTTest` is the paired form, so the differences never appear explicitly.
+**Paired** ([§3.1](@ref "3.1 Paired")). The same ``x``, now paired with a second
+ten-point sample ``y`` = `[5.0, 4.6, 6.0, 5.5, 5.1, 5.8, 5.2, 5.6, 4.4, 5.7]`, so the
+differences of [§3.1](@ref "3.1 Paired") are ``d_i = x_i - y_i``. The two-argument
+`OneSampleTTest` is the paired form: it computes ``d`` itself, and calling it on the
+differences is the same test. This is a session of its own, since ``y`` here is a
+different sample from the ``y`` above.
 
-```jldoctest ttest
-julia> z = [5.0, 4.6, 6.0, 5.5, 5.1, 5.8, 5.2, 5.6, 4.4, 5.7];
+```jldoctest ttestpaired
+julia> using HypothesisTests
 
-julia> t = OneSampleTTest(x, z)
+julia> x = [5.1, 4.9, 6.2, 5.8, 5.3, 6.1, 5.5, 5.9, 4.7, 6.0];
+
+julia> y = [5.0, 4.6, 6.0, 5.5, 5.1, 5.8, 5.2, 5.6, 4.4, 5.7];
+
+julia> d = x .- y;
+
+julia> t = OneSampleTTest(x, y)
 One sample t-test
 -----------------
 Population details:
@@ -359,17 +358,20 @@ Details:
 
 julia> confint(t)
 (0.20998182316122294, 0.3100181768387772)
+
+julia> pvalue(OneSampleTTest(d)) == pvalue(t)
+true
 ```
 
 | quantity | value |
-|---|---|
+|:---|:---|
 | ``\hat\delta`` | `0.260000` |
 | ``\nu`` | `9` |
 | ``t`` | `11.758942` |
 | interval, ``1-\alpha = 0.95`` | `(0.209982, 0.310018)` |
 
 The standard error here, `0.022111`, is far below the one-sample figure above, because
-pairing removes the between-unit variation: that is the point of
+pairing removes the between-subject variation: that is the point of
 [§3.1](@ref "3.1 Paired").
 
 ## 9. The t-tests in this package
@@ -378,8 +380,9 @@ pairing removes the between-unit variation: that is the point of
 [§3.1](@ref "3.1 Paired") is the two-argument method.
 [§4](@ref "4. Two samples, equal variances (Student)") is [`EqualVarianceTTest`](@ref) and
 [§5](@ref "5. Two samples, unequal variances (Welch)") is [`UnequalVarianceTTest`](@ref);
-both are subtypes of `TwoSampleTTest`. Unlike R, this package has no single entry point
-that dispatches between them, so [§5](@ref "5. Two samples, unequal variances (Welch)")
+both are subtypes of `TwoSampleTTest`. Unlike R, whose `t.test` is a single entry point
+with a `var.equal` switch defaulting to Welch's, this package has no entry point that
+chooses between them, so [§5](@ref "5. Two samples, unequal variances (Welch)")
 must be asked for by name.
 
 `pvalue` implements [§6](@ref "6. p-values") and `confint` implements
