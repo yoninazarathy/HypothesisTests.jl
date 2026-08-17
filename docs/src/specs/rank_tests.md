@@ -742,6 +742,16 @@ the form used in most of the literature. Only the choice of ``k`` distinguishes 
 construction ([§6.3](@ref "6.3 Exact index")) from the approximate one
 ([§6.4](@ref "6.4 Normal-approximation index")).
 
+These intervals carry names. The two-sample one, a pair of order statistics of the
+``n_x n_y`` cross-group differences, is the **Moses interval**, after the chapter
+L. E. Moses contributed to Walker and Lev's *Statistical Inference* (1953); the one-sample
+one, read off the Walsh averages, is usually credited to Tukey. Both are also called
+distribution-free, or Hodges-Lehmann, confidence intervals, the latter because
+[§5](@ref "5. Point estimation") sits inside them by construction. This page treats them as
+one object because [§6.2](@ref "6.2 Inversion") derives both from the same counting
+identity. [Hollander and Wolfe (1973)](@cite hollander1973) tabulates both, at pages 27–33
+and 68–75.
+
 ### 6.2 Inversion
 
 Take the one-sample case; the two-sample case is identical with ``U``, ``D`` and
@@ -768,6 +778,25 @@ P\bigl(\theta \in (V_{(k+1)}, V_{(m-k)})\bigr) = 1 - 2\,P(W^+ \le k) ,
 decreasing in ``k``: larger ``k`` gives a narrower interval and less coverage. The
 attainable coverages form a finite set, and no construction of this form can achieve a
 value between two of them.
+
+**That is an equality, and only under this section's assumptions.** It is exact, not a
+bound, when ``F`` is continuous and symmetric about ``\theta``: continuity is what makes
+``\theta`` almost surely not a contrast and the ``|d_i - \theta|`` almost surely untied, and
+symmetry is what gives ``W^+(\theta)`` the null distribution whose tails appear on the
+right. Drop either and the equality goes:
+
+  - ties or zeros, which is to say discrete data, leave the achieved coverage above the
+    figure computed here, since the untied null distribution is being inverted for data
+    that does not have it. On ``d`` uniform on ``\{-3, \dots, 3\}`` at ``n = 15``, where
+    every sample is tied, the nominal ``0.95`` interval covers about ``0.982`` of the time
+    against the ``0.95209`` this formula gives. Conservative, but no longer exact;
+    [§6.6](@ref "6.6 Zeros, ties, and degeneracy") returns to this.
+  - asymmetric ``F`` breaks it in the other direction and by less. For
+    ``\mathrm{Exponential}(1)`` at ``n = 15``, coverage of the pseudomedian is about
+    ``0.947``.
+
+Both figures are Monte Carlo over ``200\,000`` samples, against ``0.95226`` for the
+continuous symmetric case that the equality describes.
 
 ### 6.3 Exact index
 
@@ -798,9 +827,10 @@ whereas the quantile would index outside the contrast set.
     specified here. The two rules coincide whenever the attainable coverage immediately
     below nominal is further from it than the one immediately above.
 
-Since ``P(W \le j)`` is monotone in ``j``, ``k`` may be found by binary search over
-``\{0,\dots,\lfloor m/2 \rfloor\}``, at ``O(\log m)`` evaluations of the CDF rather than
-``O(m)``.
+``P(W \le j)`` is monotone in ``j``, so the condition holds on an initial segment of
+``\{0, \dots, \lfloor m/2 \rfloor\}`` and ``k`` is its last member: a binary search finds it
+without evaluating the CDF at every index, which matters because each evaluation runs a
+lattice recursion. [§7](@ref "7. Computational cost") gives the cost.
 
 ### 6.4 Normal-approximation index
 
@@ -826,10 +856,14 @@ one sample ``n(n+1)/4 = m/2``, for two ``n_x n_y / 2 = m/2``.
 [§2.4](@ref "2.4 Normal approximation") or [§3.4](@ref "3.4 Normal approximation"), so
 unlike the exact construction this one does respond to ties.
 
-!!! note "The continuity correction is a choice"
-    Dropping the ``1/2`` makes the index anticonservative. Across 66 one-sample sizes the
-    resulting interval is narrower than the exact interval on 45 of them at
-    ``1-\alpha = 0.90`` and on 7 at ``0.95``; with the correction, on 10 and none.
+!!! note "The continuity correction is a choice, and both implementations make it"
+    This package applies the ``1/2``, and so does R's `wilcox.test`, whose `correct`
+    argument defaults to `TRUE`. The figures below say what dropping it would cost, not
+    what either does.
+
+    Without it the index is anticonservative. Across the 66 one-sample sizes ``n = 5:70``
+    the interval comes out narrower than the exact one on 45 of them at
+    ``1-\alpha = 0.90`` and on 7 at ``0.95``; with the correction, on 10 and on none.
 
 The attained coverage of an approximate interval is not computed and is not guaranteed to
 reach the nominal level.
