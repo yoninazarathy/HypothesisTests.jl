@@ -626,8 +626,9 @@ sitting on the mean:
 At ``n = 3`` with ``W^+ = 3`` that doubled tail is ``1.25``. Doubling a discrete tail can
 overshoot, and this is where it does.
 
-Exact, ties present: with ``q_{\le}`` and ``q_{\ge}`` the proportions of sign assignments
-giving ``W' \le W^+`` and ``W' \ge W^+`` respectively,
+Exact, ties present: with ``W'`` the statistic recomputed under a sign assignment, and
+``q_{\le}`` and ``q_{\ge}`` the proportions of assignments giving ``W' \le W^+`` and
+``W' \ge W^+`` respectively,
 
 ```math
 p_{\text{left}} = q_{\le}, \qquad p_{\text{right}} = q_{\ge}, \qquad
@@ -929,7 +930,10 @@ approximation to it; what is approximate is only the normal shape.
 
 ### 3.3 p-values
 
-Exact, no ties:
+Exact, no ties. Write ``G = G_{n_x,n_y}`` for the null cdf of
+[§3.2.1](@ref "3.2.1 The lattice distribution") and ``U'`` for a draw from it, so that
+``G(u) = \mathbb{P}(U' \le u)``; the sample sizes are fixed throughout, so carrying them as
+subscripts adds nothing here. Then
 
 ```math
 p_{\text{left}} = G(U), \qquad
