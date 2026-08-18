@@ -43,6 +43,7 @@ specification onto them and records where they depart from it.
 | ``\ell`` | the number of values being ranked at once |
 | ``m`` | the number of pairwise estimates of [§4](@ref "4. Pairwise estimates") |
 | ``V_{(1)} \le \dots \le V_{(m)}`` | those pairwise estimates, sorted |
+| ``A_{ij}``, ``D_{ij}`` | the pairwise estimates before sorting ([§4.1](@ref "4.1 Definitions")); the two indices distinguish ``D_{ij}`` from the random variable ``D_i`` |
 
 **Random variables and their values.** Capitals denote random variables and lowercase the
 values they took: ``D_i`` is an observation of the one-sample procedure regarded as random,
@@ -85,8 +86,8 @@ where ``t_g`` is the multiplicity of the ``g``-th group of equal values in ``v``
 when ``v`` has no ties. Both normal approximations reduce the tie pattern to
 ``T`` and use nothing else from it, reaching it through the null variance of their
 statistic ([§2.1](@ref "2.1 Model, estimand, statistic"),
-[§3.1](@ref "3.1 Model, estimand, statistic")). The exact route never uses ``T``: under
-ties it conditions on the whole multiset of midranks and enumerates
+[§3.1](@ref "3.1 Model, estimand, statistic")). Neither exact distribution uses ``T``: under
+ties the conditional one conditions on the whole multiset of midranks and enumerates
 ([§2.2.2](@ref "2.2.2 The conditional distribution"),
 [§3.2.2](@ref "3.2.2 The conditional distribution")).
 
@@ -314,7 +315,7 @@ sum of squares is not.
 
 Symmetry about ``0`` is the whole of what
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic") and
-[§2.3](@ref "2.3 p-values") use: it makes the signs independent of ``|d|`` and each ``\pm``
+[§2.3](@ref "2.3 p-values") use: it makes the signs independent of ``|D|`` and each ``\pm``
 with probability ``1/2``, and every null distribution below follows from that alone. In
 particular the ``D_i`` need not be identically distributed for the null distribution to
 hold, though [§5](@ref "5. Point estimation") and [§6](@ref "6. Interval estimation") do
@@ -407,21 +408,26 @@ returning one of those two symbols, replaces the rule with one of the caller's o
 Forcing the exact route on a large tied sample is declined rather than served slowly. Beyond
 [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N) ``= 25`` non-zero
 differences, `pvalue` on a tied `ExactSignedRankTest` throws an `ArgumentError` naming ``n``
-and pointing at `method = :approximate`, rather than starting an enumeration of ``2^n`` sign
-patterns that would not finish: ``2^{26}`` is already ``6.7 \times 10^{7}`` of them. Only the
+and pointing at `method = :approximate`, rather than starting an enumeration whose cost
+doubles with every further observation: at ``n = 40`` there would be
+``2^{40} \approx 1.1 \times 10^{12}`` sign patterns, and the call would not return. The
+bound is a property of this enumeration rather than of the problem;
+[§2.2.2](@ref "2.2.2 The conditional distribution") closes with the polynomial algorithm
+that would remove it, proposed as
+[issue #370](https://github.com/JuliaStats/HypothesisTests.jl/issues/370). Only the
 p-value is affected. `confint` still returns an interval, since
-[§6.3](@ref "6.3 Exact index") inverts the untied distribution whether or not the sample is
+[§6.3](@ref "6.3 Exact index") inverts the lattice distribution whether or not the sample is
 tied.
 
-The interval follows the type rather than this rule: `Exact*` inverts the exact distribution
-([§6.3](@ref "6.3 Exact index")) and `Approximate*` the normal one
-([§6.4](@ref "6.4 Normal-approximation index")), whatever route the p-value beside it took.
+The interval follows the type rather than this rule: `Exact*` inverts the lattice
+distribution ([§6.3](@ref "6.3 Exact index")), tied sample or not, and `Approximate*` the
+normal one ([§6.4](@ref "6.4 Normal-approximation index")), whatever distribution the
+p-value beside it was read off.
 
 #### 2.2.1 The lattice distribution
 
-So called because with no ties the statistic lives on the integer lattice: the midranks are
-``1, \dots, n`` whatever the data, so the distribution depends on the sample through ``n``
-alone and can be tabulated once rather than rebuilt per sample.
+So called because with no ties the statistic lives on the integer lattice: the midranks
+are ``1, \dots, n`` whatever the data, and ``W^+`` is a sum over a subset of them.
 
 Under the null the signs of the ``D_i`` are independent, each ``\pm`` with probability
 ``1/2``, and independent of ``|D|``. With no ties the midranks are the integers
@@ -461,8 +467,7 @@ the p-values and intervals of [§8](@ref "8. Worked values for the rank tests").
 #### 2.2.2 The conditional distribution
 
 So called because it is built *conditionally on the midranks the sample actually produced*,
-which under ties differ from sample to sample. It cannot be tabulated in advance for a
-given ``n``; it has to be constructed from the data in hand.
+which under ties differ from sample to sample.
 
 With ties the midranks are not ``1, \dots, n``, so the lattice recursion of
 [§2.2.1](@ref "2.2.1 The lattice distribution"), which counts subsets of ``\{1, \dots, n\}``, no
@@ -559,7 +564,8 @@ sample of ``n = 24`` it returns the same two tails some forty times faster, and 
 ``n = 60``, where enumerating ``2^{60} \approx 1.2 \times 10^{18}`` sign patterns is out of
 the question, it still finishes in milliseconds. This package enumerates, and bounds the
 enumeration instead ([§9](@ref "9. The rank tests in this package")); adopting the shift
-algorithm would remove that bound rather than raise it. Its
+algorithm would remove that bound rather than raise it, which is proposed as
+[issue #370](https://github.com/JuliaStats/HypothesisTests.jl/issues/370). Its
 one-sided values agree with [§2.3](@ref "2.3 p-values") exactly; so do its two-sided ones
 here, but for a reason worth recording: `wilcox.exact` doubles nothing, instead summing the
 attainable outcomes at least as extreme on the far side, and for the one-sample statistic
@@ -663,7 +669,8 @@ distributions, and what [§5](@ref "5. Point estimation") estimates is the media
 ``X - Y`` for independent ``X \sim F_x`` and ``Y \sim F_y``. That quantity is not in general
 ``\operatorname{median}(F_x) - \operatorname{median}(F_y)``. The direction the test is
 sensitive to is a departure from ``\mathbb{P}(X > Y) = 1/2``, which is not the same as that equality
-being a null it holds its level against: see the paragraph above. Zero observations carry no
+being a null it holds its level against: [§3.1.1](@ref "3.1.1 Assumptions") measures the
+difference. Zero observations carry no
 special meaning here and are not discarded.
 
 **Hypotheses.** As in [§2.1](@ref "2.1 Model, estimand, statistic"), the null the level is
@@ -853,8 +860,9 @@ attainable ``u`` for ``n_x, n_y \le 7``.
 
 Ties are handled as in [§2.2.2](@ref "2.2.2 The conditional distribution"), by this package's own
 enumeration, on the routing of
-[§3.2](@ref "3.2 Null distribution of the Mann-Whitney statistic"). Neither StatsFuns nor R
-offers it.
+[§3.2](@ref "3.2 Null distribution of the Mann-Whitney statistic"). Neither StatsFuns nor
+base R offers it; `exactRankTests` does, as
+[§2.2.2](@ref "2.2.2 The conditional distribution") records.
 
 #### 3.2.2 The conditional distribution
 
@@ -999,6 +1007,11 @@ is itself a member.
 ```math
 D_{ij} = x_i - y_j , \qquad 1 \le i \le n_x, \ 1 \le j \le n_y .
 ```
+
+``D_{ij}`` is the traditional letter for these, and its two indices are what set it apart
+from the random variable ``D_i`` of §1: a cross
+difference is a number computed from the two samples, not an observation regarded as
+random.
 
 **Cost.** Both sets are quadratic in the sample size, and this specification forms them
 explicitly: ``m`` numbers, sorted. That is the binding constraint at scale, and it is
@@ -1149,7 +1162,8 @@ endpoints are the two values it does not cover, and
 they are hit with probability zero and the question is idle, but that is a statement about
 continuous ``F`` and not about the construction. Since the
 null distribution of ``W^+`` is symmetric about ``m/2``, the two rejection tails have
-equal probability and
+equal probability and, written in the case-free ``V_{(\cdot)}`` of
+[§4](@ref "4. Pairwise estimates") since nothing one-sample-specific remains,
 
 ```math
 \mathbb{P}\bigl(\theta \in (V_{(k+1)}, V_{(m-k)})\bigr) = 1 - 2\,\mathbb{P}(W^+ \le k) ,
@@ -1338,7 +1352,7 @@ same ``n`` observations, or the p-value and the interval describe different samp
 the zeros). If every difference is zero, every pairwise estimate is zero and the interval
 degenerates to the point ``0``.
 
-**Ties on the exact route.** [§6.3](@ref "6.3 Exact index") inverts the untied null
+**Ties on the exact interval.** [§6.3](@ref "6.3 Exact index") inverts the lattice
 distribution of [§2.2.1](@ref "2.2.1 The lattice distribution") or
 [§3.2.1](@ref "3.2.1 The lattice distribution"). Under ties the relevant null
 distribution is the conditional one of
