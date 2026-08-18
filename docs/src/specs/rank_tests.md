@@ -210,7 +210,7 @@ same order for the two-sample statistic.
 
 **Model.** The observations are independent random variables ``D_1, \dots, D_N``. The null
 hypothesis is that the distribution of each is symmetric about ``0``, meaning
-``P(D_i > t) = P(D_i < -t)`` for every ``t``. What that requires, and what it does not, is
+``\mathbb{P}(D_i > t) = \mathbb{P}(D_i < -t)`` for every ``t``. What that requires, and what it does not, is
 [§2.1.1](@ref "2.1.1 Assumptions").
 
 **Estimand.** The **pseudomedian** of ``F``: the median of ``(D + D')/2`` for independent
@@ -224,7 +224,7 @@ the pseudomedian that [§5](@ref "5. Point estimation") and
 statement about the distributions of the ``D_i`` rather than about a parameter of them:
 
 ```math
-H_0 : P(D_i > t) = P(D_i < -t) \quad \text{for every } t \text{ and every } i .
+H_0 : \mathbb{P}(D_i > t) = \mathbb{P}(D_i < -t) \quad \text{for every } t \text{ and every } i .
 ```
 
 Under the location model ``F(t) = F_0(t - \theta)`` with ``F_0`` symmetric about ``0``, so
@@ -431,8 +431,8 @@ c_n(w) = c_{n-1}(w) + c_{n-1}(w - n), \qquad
 c_0(0) = 1, \quad c_0(w) = 0 \ (w \ne 0), \quad c_n(w) = 0 \ (w < 0),
 ```
 
-and ``P(W^+ = w) = c_n(w) / 2^n``. Evaluating the recursion over the whole support is
-``O(n^3)`` in time and ``O(n^2)`` in space. Write ``F_n(w) = P(W^+ \le w)``.
+and ``\mathbb{P}(W^+ = w) = c_n(w) / 2^n``. Evaluating the recursion over the whole support is
+``O(n^3)`` in time and ``O(n^2)`` in space. Write ``F_n(w) = \mathbb{P}(W^+ \le w)``.
 
 !!! warning "Numerical care"
     ``c_n(w)`` grows like ``2^n``, so accumulating the counts and dividing only at the end
@@ -477,7 +477,7 @@ from the observed midranks, which is why ties cost ``O(2^n)`` where their absenc
 polynomial recursion. Formally,
 
 ```math
-P(W^+ \le w) = 2^{-n} \, \#\Bigl\{ \varepsilon \in \{0,1\}^n : \textstyle\sum_i \varepsilon_i R_i \le w \Bigr\} .
+\mathbb{P}(W^+ \le w) = 2^{-n} \, \#\Bigl\{ \varepsilon \in \{0,1\}^n : \textstyle\sum_i \varepsilon_i R_i \le w \Bigr\} .
 ```
 
 The proportions of assignments falling at or below and at or above the
@@ -579,7 +579,7 @@ and at ``W^+ = n(n+1)/4`` the two tails are equal, each exceeding ``1/2`` by hal
 sitting on the mean:
 
 ```math
-2 F_n\bigl(n(n+1)/4\bigr) = 1 + P\bigl(W^+ = n(n+1)/4\bigr) > 1 .
+2 F_n\bigl(n(n+1)/4\bigr) = 1 + \mathbb{P}\bigl(W^+ = n(n+1)/4\bigr) > 1 .
 ```
 
 At ``n = 3`` with ``W^+ = 3`` that doubled tail is ``1.25``. Doubling a discrete tail can
@@ -620,7 +620,7 @@ untouched, so the two statistics give the same tail events, the same null distri
 the shift, and the same p-value at every level. Subtracting the minimum is what turns the
 rank sum into the pair count of [§1.2](@ref "1.2 A worked ranking"), supported from ``0``
 and, divided by ``n_x n_y``, an estimate of
-``P(X > Y) + \tfrac{1}{2} P(X = Y)``.
+``\mathbb{P}(X > Y) + \tfrac{1}{2} \mathbb{P}(X = Y)``.
 
 The three subsections are those of
 [§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)"): the statistic
@@ -640,7 +640,7 @@ requires, and what it does not, is [§3.1.1](@ref "3.1.1 Assumptions").
 distributions, and what [§5](@ref "5. Point estimation") estimates is the median of
 ``X - Y`` for independent ``X \sim F_x`` and ``Y \sim F_y``. That quantity is not in general
 ``\operatorname{median}(F_x) - \operatorname{median}(F_y)``. The direction the test is
-sensitive to is a departure from ``P(X > Y) = 1/2``, which is not the same as that equality
+sensitive to is a departure from ``\mathbb{P}(X > Y) = 1/2``, which is not the same as that equality
 being a null it holds its level against: see the paragraph above. Zero observations carry no
 special meaning here and are not discarded.
 
@@ -738,12 +738,12 @@ convenience: it makes ties events of probability zero, so the lattice distributi
 distributions keep exactness through the conditional enumeration of
 [§3.2.2](@ref "3.2.2 The conditional distribution").
 
-Equality cannot be weakened to ``P(X > Y) = 1/2``. That weaker statement leaves ``F_x`` and
+Equality cannot be weakened to ``\mathbb{P}(X > Y) = 1/2``. That weaker statement leaves ``F_x`` and
 ``F_y`` free to differ in spread, and then the pooled observations are no longer
 exchangeable, the null variance above is no longer the variance of ``U``, and the
 test does not hold its level. It fails in both directions, according to which sample is
 the larger: for ``X \sim \mathcal{N}(0, 1)`` against ``Y \sim \mathcal{N}(0, 9)``, where
-``P(X > Y) = 1/2`` holds exactly by symmetry, the nominal ``0.05`` two-sided test has size
+``\mathbb{P}(X > Y) = 1/2`` holds exactly by symmetry, the nominal ``0.05`` two-sided test has size
 about ``0.13`` at ``(n_x, n_y) = (30, 10)`` and about ``0.016`` at ``(10, 30)``. Under
 ``F_x = F_y`` both come to ``0.05``. This is the two-sample counterpart of the median
 against pseudomedian trap in [§2.1.1](@ref "2.1.1 Assumptions"), and it is why
@@ -807,9 +807,9 @@ c_{n_x, n_y}(u) = c_{n_x - 1,\, n_y}(u - n_y) + c_{n_x,\, n_y - 1}(u) ,
 ```
 
 with ``c_{n_x, 0}(0) = c_{0, n_y}(0) = 1``, and ``c(u) = 0`` for ``u < 0`` or
-``u > n_x n_y``. Then ``P(U = u) = c_{n_x,n_y}(u) / \binom{N}{n_x}``. Evaluating over the
+``u > n_x n_y``. Then ``\mathbb{P}(U = u) = c_{n_x,n_y}(u) / \binom{N}{n_x}``. Evaluating over the
 support is ``O\bigl((n_x n_y)^2\bigr)`` in time and ``O(n_x n_y)`` in space. Write
-``G_{n_x,n_y}(u) = P(U \le u)``.
+``G_{n_x,n_y}(u) = \mathbb{P}(U \le u)``.
 
 The numerical caveat of [§2.2.1](@ref "2.2.1 The lattice distribution") applies with
 more force: the normalising constant ``\binom{N}{n_x}`` exceeds ``2^{63}`` for balanced
@@ -894,7 +894,7 @@ p_{\text{both}} = \min\bigl(1,\, 2\, G(\min(U,\, n_x n_y - U))\bigr) .
 
 The fold to the lower tail is exact, not an approximation: by the null symmetry of
 [§3.1](@ref "3.1 Model, estimand, statistic"),
-``G(n_x n_y - U) = P(U' \ge U)``, so ``G(\min(U, n_x n_y - U))`` is the smaller of the two
+``G(n_x n_y - U) = \mathbb{P}(U' \ge U)``, so ``G(\min(U, n_x n_y - U))`` is the smaller of the two
 tails wherever ``U`` sits, the centre included. The clip is needed for the reason it is
 needed in [§2.3](@ref "2.3 p-values"): what can exceed ``1`` is the doubling, when ``U``
 lands on ``n_x n_y / 2`` and that value carries an atom. At ``n_x = n_y = 2`` with
@@ -1128,7 +1128,7 @@ null distribution of ``W^+`` is symmetric about ``m/2``, the two rejection tails
 equal probability and
 
 ```math
-P\bigl(\theta \in (V_{(k+1)}, V_{(m-k)})\bigr) = 1 - 2\,P(W^+ \le k) ,
+\mathbb{P}\bigl(\theta \in (V_{(k+1)}, V_{(m-k)})\bigr) = 1 - 2\,\mathbb{P}(W^+ \le k) ,
 ```
 
 decreasing in ``k``: larger ``k`` gives a narrower interval and less coverage. The
@@ -1195,7 +1195,7 @@ On such data the endpoint question is not a nicety but the dominant term. Measur
 this package's `confint` at ``n = 15`` and nominal ``0.95``, over ``200\,000`` samples per
 row:
 
-| ``F`` | endpoints included | endpoints excluded | ``P(\text{an endpoint} = \theta)`` |
+| ``F`` | endpoints included | endpoints excluded | ``\mathbb{P}(\text{an endpoint} = \theta)`` |
 |:---|:---|:---|:---|
 | uniform on ``\{-3, \dots, 3\}`` | ``0.98174`` | ``0.88818`` | ``0.094`` |
 | uniform on ``\pm\{1, 2, 3\}`` | ``0.98324`` | ``0.87114`` | ``0.112`` |
@@ -1207,27 +1207,27 @@ Two effects separate. Inverting the untied null distribution for tied data is wo
 Excluding the endpoints is worth about ``-0.09`` to ``-0.11``, three times as large and in
 the other direction, which is the whole distance between the two coverage columns. The
 classical conservative guarantee is a statement about the closed interval,
-``P(V_{(k+1)} \le \theta \le V_{(m-k)}) \ge 1 - \alpha``; a reader of the returned pair
+``\mathbb{P}(V_{(k+1)} \le \theta \le V_{(m-k)}) \ge 1 - \alpha``; a reader of the returned pair
 who treats the endpoints as excluded holds an interval that on data like this covers less
 than it claims. On coarse data, read the endpoints as included.
 
 ### 6.3 Exact index
 
 ```math
-k = \max\bigl\{\, j \in \{0,\dots,\lceil m/2 \rceil - 1\} \;:\; P(W \le j) < \alpha/2 \,\bigr\} ,
+k = \max\bigl\{\, j \in \{0,\dots,\lceil m/2 \rceil - 1\} \;:\; \mathbb{P}(W \le j) < \alpha/2 \,\bigr\} ,
 ```
 
-taken as ``0`` when no such ``j`` exists, with ``P(W \le \cdot)`` the exact null CDF of
+taken as ``0`` when no such ``j`` exists, with ``\mathbb{P}(W \le \cdot)`` the exact null CDF of
 [§2.2.1](@ref "2.2.1 The lattice distribution") or
 [§3.2.1](@ref "3.2.1 The lattice distribution").
 
 By [§6.2](@ref "6.2 Inversion") the attained coverage is then
-``1 - 2P(W \le k) > 1 - \alpha`` strictly, and the next narrower interval, at ``k+1``,
+``1 - 2\mathbb{P}(W \le k) > 1 - \alpha`` strictly, and the next narrower interval, at ``k+1``,
 attains at most ``1-\alpha``. This ``k`` therefore gives the narrowest interval of this
 form whose coverage still reaches the nominal level. The excess over ``1-\alpha`` is the
 discreteness of the null distribution and is not removable.
 
-Equivalently ``C_\alpha = k+1 = \min\{j : P(W \le j) \ge \alpha/2\}``, the ``\alpha/2``
+Equivalently ``C_\alpha = k+1 = \min\{j : \mathbb{P}(W \le j) \ge \alpha/2\}``, the ``\alpha/2``
 quantile of the null distribution, whenever that minimum is at least ``1``. Where it is
 ``0``, which is the degenerate case of
 [§6.6](@ref "6.6 Zeros, ties, and degeneracy"), the two disagree: the convention above
@@ -1240,19 +1240,19 @@ whereas the quantile would index outside the pairwise estimates.
     specified here. The two rules coincide whenever the attainable coverage immediately
     below nominal is further from it than the one immediately above.
 
-``P(W \le j)`` is monotone in ``j``, so the condition holds on an initial segment of
+``\mathbb{P}(W \le j)`` is monotone in ``j``, so the condition holds on an initial segment of
 ``\{0, \dots, \lceil m/2 \rceil - 1\}`` and ``k`` is its last member: a binary search finds it
 without evaluating the CDF at every index, which matters because each evaluation runs a
 lattice recursion of its own.
 
 ### 6.4 Normal-approximation index
 
-The target is the exact critical value ``C_\alpha = \min\{j : P(W \le j) \ge \alpha/2\}``.
+The target is the exact critical value ``C_\alpha = \min\{j : \mathbb{P}(W \le j) \ge \alpha/2\}``.
 The statistic is supported on a unit lattice, so with ``\mu_0`` the null **mean**, not
 the centred statistic of [§2.2.3](@ref "2.2.3 The normal approximation"),
 
 ```math
-P(W \le j) \approx \Phi\!\left(\frac{j + 1/2 - \mu_0}{\sigma}\right) .
+\mathbb{P}(W \le j) \approx \Phi\!\left(\frac{j + 1/2 - \mu_0}{\sigma}\right) .
 ```
 
 Setting this to ``\alpha/2`` and solving for ``j``,
@@ -1334,18 +1334,18 @@ construction it returns different endpoints, ``(-0.5, 1)`` at ``0.95`` on the sa
 construction gives ``(-0.25, 0.75)``, and its reported estimate, ``0.375`` there, is not
 the Hodges-Lehmann ``0.5`` either.
 
-**Degeneracy.** If ``P(W \le 0) > \alpha/2`` then no ``k`` of this form reaches the
+**Degeneracy.** If ``\mathbb{P}(W \le 0) > \alpha/2`` then no ``k`` of this form reaches the
 nominal level, and the widest available interval, ``(V_{(1)}, V_{(m)})``, falls short of
 it. Its coverage is ``1 - 2^{1-n}`` in the untied one-sample case: ``0.75`` at ``n = 3``,
 ``0.875`` at ``n = 4``, ``0.9375`` at ``n = 5``, so a ``0.95`` interval is unattainable
-below ``n = 6`` and a ``0.99`` interval below ``n = 8``. At ``P(W \le 0) = \alpha/2``
+below ``n = 6`` and a ``0.99`` interval below ``n = 8``. At ``\mathbb{P}(W \le 0) = \alpha/2``
 exactly there is nothing to warn about: ``k = 0`` attains the request exactly, as at
 ``n = 5`` and ``1 - \alpha = 0.9375``.
 
 Returning a short interval as though it met the request would misstate the coverage, so
 this package returns it and warns. On the exact route the warning names the coverage that
 is attainable, as R's does; for a one-sided bound it names the one-sided request and the
-one-sided attainable coverage ``1 - P(W \le 0)``, since only one tail can miss.
+one-sided attainable coverage ``1 - \mathbb{P}(W \le 0)``, since only one tail can miss.
 
 The approximate route warns for a related but weaker reason. Its index rule
 ([§6.4](@ref "6.4 Normal-approximation index")) can ask for an order statistic outside the
@@ -1571,7 +1571,7 @@ julia> confint(t)
 |:---|:---|
 | ``\hat\Delta`` | `-5.6` |
 | exact index at ``1-\alpha = 0.95`` | ``k = 23``, ``C_\alpha = 24`` |
-| ``P(U \le 23)``, ``P(U \le 24)`` | `0.021629`, `0.026213` |
+| ``\mathbb{P}(U \le 23)``, ``\mathbb{P}(U \le 24)`` | `0.021629`, `0.026213` |
 | attained coverage | `0.95674` |
 
 ### 8.4 Two samples, ties
