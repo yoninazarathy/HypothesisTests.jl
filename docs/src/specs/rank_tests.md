@@ -1315,7 +1315,7 @@ one sample ``n(n+1)/4 = m/2``, for two ``n_x n_y / 2 = m/2``.
 [§2.2.3](@ref "2.2.3 The normal approximation") or [§3.2.3](@ref "3.2.3 The normal approximation"), so
 unlike the exact construction this one does respond to ties.
 
-!!! note "The continuity correction is a choice, and both implementations make it"
+!!! note "The continuity correction is a choice"
     This package applies the ``1/2``, and so does R's `wilcox.test`, whose `correct`
     argument defaults to `TRUE`. The figures below say what dropping it would cost, not
     what either does.
