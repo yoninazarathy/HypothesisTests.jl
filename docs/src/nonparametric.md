@@ -116,8 +116,8 @@ package `exactRankTests`, whose `wilcox.exact` does compute the tied distributio
 is what the tied p-values here are tested against. The two agree on every one-sided value;
 their two-sided values agree for the signed rank tests and can differ slightly for the
 Mann-Whitney ones, where `wilcox.exact` sums the far tail and this package doubles the
-smaller one. See [§2.2.2](@ref "2.2.2 Exact, ties present") and
-[§3.2.2](@ref "3.2.2 Exact, ties present").
+smaller one. See [§2.2.2](@ref "2.2.2 The conditional distribution") and
+[§3.2.2](@ref "3.2.2 The conditional distribution").
 
 Three named bounds apply, and past any of them the tests raise rather than run unbounded.
 The first bounds the tied-data enumeration a p-value runs, and `method = :approximate` is

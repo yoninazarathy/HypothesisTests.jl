@@ -77,8 +77,8 @@ when ``v`` has no ties. Both normal approximations reduce the tie pattern to
 statistic ([§2.1](@ref "2.1 Model, estimand, statistic"),
 [§3.1](@ref "3.1 Model, estimand, statistic")). The exact route never uses ``T``: under
 ties it conditions on the whole multiset of midranks and enumerates
-([§2.2.2](@ref "2.2.2 Exact, ties present"),
-[§3.2.2](@ref "3.2.2 Exact, ties present")).
+([§2.2.2](@ref "2.2.2 The conditional distribution"),
+[§3.2.2](@ref "3.2.2 The conditional distribution")).
 
 ### 1.1 Mathematical observations
 
@@ -250,7 +250,7 @@ observations never been recorded, so appending zeros to a sample moves neither `
 the p-value, nor the estimate, nor the interval.
 
 Discarding conditions the test on which observations were non-zero, and so on ``n``, in
-the sense set out in [§2.2.2](@ref "2.2.2 Exact, ties present"). That costs
+the sense set out in [§2.2.2](@ref "2.2.2 The conditional distribution"). That costs
 nothing in exactness, since the retained signs are still independent and each ``\pm`` with
 probability ``1/2`` whatever the zeros did. It does cost information: only ``n`` of the
 ``N`` observations reach the test, and the support of a statistic built from ``n`` ranks is
@@ -313,9 +313,9 @@ distribution.
 
 Continuity of ``F`` is a convenience rather than a requirement. It makes zeros and ties
 events of probability zero, so the ranks are the integers ``1, \dots, n`` and the lattice
-distribution of [§2.2.1](@ref "2.2.1 Exact, no ties") applies. Under a
+distribution of [§2.2.1](@ref "2.2.1 The lattice distribution") applies. Under a
 discrete or mixed ``F`` the procedure remains exact provided ties are handled as in
-[§2.2.2](@ref "2.2.2 Exact, ties present"), which also explains in what sense
+[§2.2.2](@ref "2.2.2 The conditional distribution"), which also explains in what sense
 such a test is exact, and zeros are discarded as in the **Zeros** paragraph above.
 
 What cannot be weakened is symmetry. Testing ``\operatorname{median}(F) = 0`` is a
@@ -329,36 +329,38 @@ time.
 
 ### 2.2 Null distribution of the signed rank statistic
 
-Three distributions are in play, and a p-value is read off exactly one of them for a given
-sample. The tie pattern decides which of them are *available*; it does not by itself decide
-which is used:
+A p-value needs a distribution for ``W^+`` under ``H_0``, and there are three to choose
+from. They are named here, and the names are used in place of section numbers from this
+point on:
 
-| route | available for | the distribution | cost |
+| distribution | available for | how it is obtained | cost |
 |:---|:---|:---|:---|
-| [§2.2.1](@ref "2.2.1 Exact, no ties") | untied samples only, ``T(\lvert d \rvert) = 0`` | exact, by a lattice recursion | ``O(n^3)`` |
-| [§2.2.2](@ref "2.2.2 Exact, ties present") | any sample, and the only exact route once ``T(\lvert d \rvert) > 0`` | exact, by enumerating ``2^n`` sign patterns | ``O(2^n)`` |
-| [§2.2.3](@ref "2.2.3 Normal approximation") | any sample | normal, with the moments above | ``O(n)`` |
+| **lattice** ([§2.2.1](@ref "2.2.1 The lattice distribution")) | untied samples only, ``T(\lvert d \rvert) = 0`` | exactly, by a recursion over the subsets of ``\{1, \dots, n\}`` | ``O(n^3)`` |
+| **conditional** ([§2.2.2](@ref "2.2.2 The conditional distribution")) | any sample, and the only exact one once ``T(\lvert d \rvert) > 0`` | exactly, by enumerating the ``2^n`` sign patterns | ``O(2^n)`` |
+| **normal** ([§2.2.3](@ref "2.2.3 The normal approximation")) | any sample | approximately, from the moments above | ``O(n)`` |
 
-The costs are per p-value, and follow the ranking, which is ``O(n \log n)`` in itself. The
-two exact rows describe the same distribution: on an untied sample the enumeration of
-[§2.2.2](@ref "2.2.2 Exact, ties present") returns exactly what the recursion of
-[§2.2.1](@ref "2.2.1 Exact, no ties") does, at far greater cost, which is why the recursion
-is taken whenever it is available.
+The tie pattern decides which of the three are *available*; it does not by itself decide
+which is used. The costs are per p-value, and follow the ranking, which is
+``O(n \log n)`` in itself.
+
+The first two are the same distribution wherever both are available: on an untied sample
+the conditional enumeration returns exactly what the lattice recursion does, at far greater
+cost, which is why the recursion is taken whenever it applies. The names reflect how each
+is reached, not two different notions of the null.
 
 **Choosing between them.** There are two decisions here, and they are of different kinds.
 
-Which *exact* route applies is forced by the data and is not a choice: with no ties the
-midranks are ``1, \dots, n`` and the lattice recursion applies, and with ties they are not,
-so the recursion does not. The two are one route in substance, differing only in how the
-same conditional distribution is reached, and
+**Lattice against conditional** is forced by the data and is not a choice: with no ties the
+midranks are ``1, \dots, n`` and the recursion applies, and with ties they are not, so it
+does not. As noted above the two agree wherever both apply, and
 [§2.3](@ref "2.3 p-values") reads the same three formulas off either.
 
-Exact against approximate *is* a choice, and it is where the sample size enters: it trades
+**Exact against normal** *is* a choice, and it is where the sample size enters: it trades
 the cost above, prohibitive for the enumeration on a large tied sample, against a p-value
 that is only asymptotically right. An untied sample of any size may still be taken through
-[§2.2.3](@ref "2.2.3 Normal approximation"), and a large one usually is. The
-approximate route is also the only one of the three whose distribution responds to ties
-through ``T``, since the exact routes condition on the midranks rather than summarise them.
+the normal, and a large one usually is. The normal is also the only one of the three that
+responds to ties through ``T``, since the other two condition on the midranks rather than
+summarise them.
 
 **In this package.** Two types implement the procedure, `ExactSignedRankTest` and
 `ApproximateSignedRankTest`. `SignedRankTest` is not a third: it is a function that ranks
@@ -367,9 +369,9 @@ number of non-zero differences are the only properties of the data that enter:
 
 | call | ``\lvert d \rvert`` untied | ``\lvert d \rvert`` tied |
 |:---|:---|:---|
-| `SignedRankTest(d)` | [§2.2.1](@ref "2.2.1 Exact, no ties") for ``n \le 50``, [§2.2.3](@ref "2.2.3 Normal approximation") for ``n > 50`` | [§2.2.2](@ref "2.2.2 Exact, ties present") for ``n \le 15``, [§2.2.3](@ref "2.2.3 Normal approximation") for ``n > 15`` |
-| `ExactSignedRankTest(d)` | [§2.2.1](@ref "2.2.1 Exact, no ties"), at any size | [§2.2.2](@ref "2.2.2 Exact, ties present"), up to ``n = 25`` |
-| `ApproximateSignedRankTest(d)` | [§2.2.3](@ref "2.2.3 Normal approximation") | [§2.2.3](@ref "2.2.3 Normal approximation") |
+| `SignedRankTest(d)` | lattice for ``n \le 50``, normal above | conditional for ``n \le 15``, normal above |
+| `ExactSignedRankTest(d)` | lattice, at any size | conditional, up to ``n = 25`` |
+| `ApproximateSignedRankTest(d)` | normal | normal |
 
 Reading the first row: the normal approximation is what `SignedRankTest` falls back on when
 the sample is too large for the exact route it would otherwise take, and ties lower that size
@@ -399,7 +401,11 @@ The interval follows the type rather than this rule: `Exact*` inverts the exact 
 ([§6.3](@ref "6.3 Exact index")) and `Approximate*` the normal one
 ([§6.4](@ref "6.4 Normal-approximation index")), whatever route the p-value beside it took.
 
-#### 2.2.1 Exact, no ties
+#### 2.2.1 The lattice distribution
+
+So called because with no ties the statistic lives on the integer lattice: the midranks are
+``1, \dots, n`` whatever the data, so the distribution depends on the sample through ``n``
+alone and can be tabulated once rather than rebuilt per sample.
 
 Under the null the signs of the ``d_i`` are independent, each ``\pm`` with probability
 ``1/2``, and independent of ``|d|``. With no ties the midranks are the integers
@@ -436,10 +442,14 @@ in `double`: exact while they stay under ``2^{53}`` and approximate beyond, whic
 different way out of the overflow above. The Julia values are tested against R's, as are
 the p-values and intervals of [§8](@ref "8. Worked values for the rank tests").
 
-#### 2.2.2 Exact, ties present
+#### 2.2.2 The conditional distribution
+
+So called because it is built *conditionally on the midranks the sample actually produced*,
+which under ties differ from sample to sample. It cannot be tabulated in advance for a
+given ``n``; it has to be constructed from the data in hand.
 
 With ties the midranks are not ``1, \dots, n``, so the lattice recursion of
-[§2.2.1](@ref "2.2.1 Exact, no ties"), which counts subsets of ``\{1, \dots, n\}``, no
+[§2.2.1](@ref "2.2.1 The lattice distribution"), which counts subsets of ``\{1, \dots, n\}``, no
 longer describes the statistic. What is done instead is to build the null distribution
 directly from the sample in hand, in three steps:
 
@@ -503,7 +513,7 @@ signs are independent of ``|d|``, so fixing ``|d|`` discards nothing that bears 
 null. And a test whose level is exactly ``\alpha`` for every possible value of ``|d|`` has
 level exactly ``\alpha`` when averaged over ``|d|``, which is the unconditional statement:
 conditional exactness is the stronger property, not a weaker substitute for it. That is
-also why the untied case of [§2.2.1](@ref "2.2.1 Exact, no ties") needs no
+also why the untied case of [§2.2.1](@ref "2.2.1 The lattice distribution") needs no
 such discussion. There the midranks are ``1, \dots, n`` whatever the data, so conditioning
 on them fixes nothing, and the two distributions coincide.
 
@@ -525,9 +535,9 @@ attainable outcomes at least as extreme on the far side, and for the one-sample 
 the two rules coincide because the conditional distribution is symmetric whatever the ties,
 the flip of every sign taking ``W^+`` to ``\sum_i R_i - W^+``. The two-sample conditional
 distribution has no such symmetry, and there the two rules part:
-[§3.2.2](@ref "3.2.2 Exact, ties present").
+[§3.2.2](@ref "3.2.2 The conditional distribution").
 
-#### 2.2.3 Normal approximation
+#### 2.2.3 The normal approximation
 
 ``W^+`` is asymptotically normal with the mean and variance of
 [§2.1](@ref "2.1 Model, estimand, statistic"). Write
@@ -539,7 +549,7 @@ distribution has no such symmetry, and there the two rules part:
 
 for the centred statistic and the tie-corrected standard deviation. The variance
 correction is exact under the conditional distribution of
-[§2.2.2](@ref "2.2.2 Exact, ties present"), not an approximation to it.
+[§2.2.2](@ref "2.2.2 The conditional distribution"), not an approximation to it.
 
 ### 2.3 p-values
 
@@ -692,7 +702,7 @@ negates and reverses both, taking the interval of
 
 That the two are interchangeable is what lets an implementation work with whichever is
 convenient, and this package uses the freedom: the tied enumeration of
-[§3.2.2](@ref "3.2.2 Exact, ties present") always enumerates the *smaller*
+[§3.2.2](@ref "3.2.2 The conditional distribution") always enumerates the *smaller*
 sample, since there are fewer subsets to visit, and swaps the two tails afterwards if that
 was ``y``.
 
@@ -710,13 +720,13 @@ variance ``\frac{n_x n_y}{N(N-1)}\sum_i (R_i - \bar R)^2``. Substituting
 
 Equality is what makes the test exact, because it makes the ``N`` observations
 exchangeable: every assignment of the pooled midranks to the two samples is then equally
-likely, which is the whole of [§3.2.1](@ref "3.2.1 Exact, no ties") and
-[§3.2.2](@ref "3.2.2 Exact, ties present"). As in
+likely, which is the whole of [§3.2.1](@ref "3.2.1 The lattice distribution") and
+[§3.2.2](@ref "3.2.2 The conditional distribution"). As in
 [§2.1.1](@ref "2.1.1 Assumptions"), continuity of ``F_x`` and ``F_y`` is a
 convenience: it makes ties events of probability zero, so the lattice distribution of
-[§3.2.1](@ref "3.2.1 Exact, no ties") applies. Discrete or mixed
+[§3.2.1](@ref "3.2.1 The lattice distribution") applies. Discrete or mixed
 distributions keep exactness through the conditional enumeration of
-[§3.2.2](@ref "3.2.2 Exact, ties present").
+[§3.2.2](@ref "3.2.2 The conditional distribution").
 
 Equality cannot be weakened to ``P(X > Y) = 1/2``. That weaker statement leaves ``F_x`` and
 ``F_y`` free to differ in spread, and then the pooled observations are no longer
@@ -731,21 +741,21 @@ that section insists on symmetry and this one on equality.
 
 ### 3.2 Null distribution of the Mann-Whitney statistic
 
-The three routes of [§2.2](@ref "2.2 Null distribution of the signed rank statistic"), with
-the enumeration now over rank assignments rather than sign patterns. Write
+The same three distributions as in
+[§2.2](@ref "2.2 Null distribution of the signed rank statistic"), carrying the same names,
+with the enumeration now over rank assignments rather than sign patterns. Write
 ``B = \binom{N}{\min(n_x, n_y)}`` for the number of those assignments:
 
-| route | available for | the distribution | cost |
+| distribution | available for | how it is obtained | cost |
 |:---|:---|:---|:---|
-| [§3.2.1](@ref "3.2.1 Exact, no ties") | untied pooled samples only, ``T([x; y]) = 0`` | exact, by a lattice recursion | ``O\bigl((n_x n_y)^2\bigr)`` |
-| [§3.2.2](@ref "3.2.2 Exact, ties present") | any sample, and the only exact route once ``T([x; y]) > 0`` | exact, by enumerating the ``B`` assignments | ``O(B)`` |
-| [§3.2.3](@ref "3.2.3 Normal approximation") | any sample | normal, with the moments above | ``O(N)`` |
+| **lattice** ([§3.2.1](@ref "3.2.1 The lattice distribution")) | untied pooled samples only, ``T([x; y]) = 0`` | exactly, by a recursion | ``O\bigl((n_x n_y)^2\bigr)`` |
+| **conditional** ([§3.2.2](@ref "3.2.2 The conditional distribution")) | any sample, and the only exact one once ``T([x; y]) > 0`` | exactly, by enumerating the ``B`` assignments | ``O(B)`` |
+| **normal** ([§3.2.3](@ref "3.2.3 The normal approximation")) | any sample | approximately, from the moments above | ``O(N)`` |
 
 **Choosing between them.** Exactly as in
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"): the tie pattern decides
-which exact route is available, and exact against approximate is a choice about cost, so an
-untied sample too large for the recursion still goes through
-[§3.2.3](@ref "3.2.3 Normal approximation").
+whether the lattice is available, and exact against normal is a choice about cost, so an
+untied sample too large for the recursion still goes through the normal.
 
 **In this package.** As in
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"), two types implement the
@@ -755,9 +765,9 @@ pooled size are the only properties of the data that enter:
 
 | call | pooled sample untied | pooled sample tied |
 |:---|:---|:---|
-| `MannWhitneyUTest(x, y)` | [§3.2.1](@ref "3.2.1 Exact, no ties") for ``N \le 50``, [§3.2.3](@ref "3.2.3 Normal approximation") for ``N > 50`` | [§3.2.2](@ref "3.2.2 Exact, ties present") for ``N \le 10``, [§3.2.3](@ref "3.2.3 Normal approximation") for ``N > 10`` |
-| `ExactMannWhitneyUTest(x, y)` | [§3.2.1](@ref "3.2.1 Exact, no ties"), at any size | [§3.2.2](@ref "3.2.2 Exact, ties present"), up to ``B = 2^{25}`` |
-| `ApproximateMannWhitneyUTest(x, y)` | [§3.2.3](@ref "3.2.3 Normal approximation") | [§3.2.3](@ref "3.2.3 Normal approximation") |
+| `MannWhitneyUTest(x, y)` | lattice for ``N \le 50``, normal above | conditional for ``N \le 10``, normal above |
+| `ExactMannWhitneyUTest(x, y)` | lattice, at any size | conditional, up to ``B = 2^{25}`` |
+| `ApproximateMannWhitneyUTest(x, y)` | normal | normal |
 
 Again the automatic rule turns to the normal approximation once the sample outgrows its exact
 route, and ties lower the size at which that happens, here from ``N \le 50`` to ``N \le 10``.
@@ -776,7 +786,7 @@ passed `(; nx, ny, ties, tie_adjustment)`. Forcing the exact route is declined t
 here when ``B`` exceeds ``2^{25} = 33\,554\,432`` assignments: `pvalue` throws an
 `ArgumentError` naming ``n_x`` and ``n_y``, and `confint` is again unaffected.
 
-#### 3.2.1 Exact, no ties
+#### 3.2.1 The lattice distribution
 
 Under the null all ``\binom{N}{n_x}`` assignments of pooled ranks to the two samples are
 equally likely. Let ``c_{n_x, n_y}(u)`` count those giving ``U = u``. Conditioning on
@@ -791,7 +801,7 @@ with ``c_{n_x, 0}(0) = c_{0, n_y}(0) = 1``, and ``c(u) = 0`` for ``u < 0`` or
 support is ``O\bigl((n_x n_y)^2\bigr)`` in time and ``O(n_x n_y)`` in space. Write
 ``G_{n_x,n_y}(u) = P(U \le u)``.
 
-The numerical caveat of [§2.2.1](@ref "2.2.1 Exact, no ties") applies with
+The numerical caveat of [§2.2.1](@ref "2.2.1 The lattice distribution") applies with
 more force: the normalising constant ``\binom{N}{n_x}`` exceeds ``2^{63}`` for balanced
 samples from ``n_x = n_y = 34``, where ``\binom{68}{34} \approx 2.85 \times 10^{19}``.
 That bounds the counts themselves; an implementation whose intermediate terms exceed the
@@ -807,14 +817,14 @@ stated here is the one R uses, in the C routines `pwilcox`, `dwilcox` and `qwilc
 that the two agree is worth checking, and they do, to floating-point precision at every
 attainable ``u`` for ``n_x, n_y \le 7``.
 
-Ties are handled as in [§2.2.2](@ref "2.2.2 Exact, ties present"), by this package's own
+Ties are handled as in [§2.2.2](@ref "2.2.2 The conditional distribution"), by this package's own
 enumeration, on the routing of
 [§3.2](@ref "3.2 Null distribution of the Mann-Whitney statistic"). Neither StatsFuns nor R
 offers it.
 
-#### 3.2.2 Exact, ties present
+#### 3.2.2 The conditional distribution
 
-The recipe of [§2.2.2](@ref "2.2.2 Exact, ties present") carries over with the sign
+The recipe of [§2.2.2](@ref "2.2.2 The conditional distribution") carries over with the sign
 patterns replaced by group assignments. Rank the pooled sample, ties included, fixing the
 ``N`` midranks. Under the null the two samples are exchangeable, so every way of dealing
 ``\min(n_x, n_y)`` of those fixed midranks to the smaller sample is equally likely; walk
@@ -847,7 +857,7 @@ they answer differently the question of what counts as at least as extreme on th
 of an asymmetric distribution. This specification doubles, which is also what the untied
 routes of both procedures do.
 
-#### 3.2.3 Normal approximation
+#### 3.2.3 The normal approximation
 
 ``U`` is asymptotically normal with the mean and variance of
 [§3.1](@ref "3.1 Model, estimand, statistic"). Write
@@ -858,8 +868,8 @@ routes of both procedures do.
 ```
 
 for the centred statistic and the tie-corrected standard deviation. As in
-[§2.2.3](@ref "2.2.3 Normal approximation"), the tie correction is exact under the conditional
-distribution of [§3.2.2](@ref "3.2.2 Exact, ties present") rather than an
+[§2.2.3](@ref "2.2.3 The normal approximation"), the tie correction is exact under the conditional
+distribution of [§3.2.2](@ref "3.2.2 The conditional distribution") rather than an
 approximation to it; what is approximate is only the normal shape.
 
 ### 3.3 p-values
@@ -882,8 +892,8 @@ lands on ``n_x n_y / 2`` and that value carries an atom. At ``n_x = n_y = 2`` wi
 
 Exact under ties, and the normal approximation: exactly as in [§2.3](@ref "2.3 p-values"),
 with ``q_{\le}, q_{\ge}`` from
-[§3.2.2](@ref "3.2.2 Exact, ties present") and
-``\mu, \sigma`` from [§3.2.3](@ref "3.2.3 Normal approximation").
+[§3.2.2](@ref "3.2.2 The conditional distribution") and
+``\mu, \sigma`` from [§3.2.3](@ref "3.2.3 The normal approximation").
 
 Degenerate cases: if ``n_x = 0`` or ``n_y = 0`` there is no pair to compare, ``U = 0`` is
 the only attainable value, the null distribution is a point mass there, and all three exact
@@ -1151,7 +1161,7 @@ At such a ``\theta`` the sample actually tested, ``d - \theta``, is not the unti
 interval was read off. As [§4.2](@ref "4.2 The counting identity") sets out,
 ``\theta = (d_i + d_j)/2`` with ``i \ne j`` leaves two shifted observations equal in absolute
 value and opposite in sign, so the p-value there comes from the tied conditional distribution
-of [§2.2.2](@ref "2.2.2 Exact, ties present"); and ``\theta = d_i`` leaves one of them zero,
+of [§2.2.2](@ref "2.2.2 The conditional distribution"); and ``\theta = d_i`` leaves one of them zero,
 so it comes from a sample one observation shorter. Neither is the distribution whose quantile
 fixed ``k``, so neither need agree with the interval about that point.
 
@@ -1198,8 +1208,8 @@ k = \max\bigl\{\, j \in \{0,\dots,\lceil m/2 \rceil - 1\} \;:\; P(W \le j) < \al
 ```
 
 taken as ``0`` when no such ``j`` exists, with ``P(W \le \cdot)`` the exact null CDF of
-[§2.2.1](@ref "2.2.1 Exact, no ties") or
-[§3.2.1](@ref "3.2.1 Exact, no ties").
+[§2.2.1](@ref "2.2.1 The lattice distribution") or
+[§3.2.1](@ref "3.2.1 The lattice distribution").
 
 By [§6.2](@ref "6.2 Inversion") the attained coverage is then
 ``1 - 2P(W \le k) > 1 - \alpha`` strictly, and the next narrower interval, at ``k+1``,
@@ -1229,7 +1239,7 @@ lattice recursion of its own.
 
 The target is the exact critical value ``C_\alpha = \min\{j : P(W \le j) \ge \alpha/2\}``.
 The statistic is supported on a unit lattice, so with ``\mu_0`` the null **mean**, not
-the centred statistic of [§2.2.3](@ref "2.2.3 Normal approximation"),
+the centred statistic of [§2.2.3](@ref "2.2.3 The normal approximation"),
 
 ```math
 P(W \le j) \approx \Phi\!\left(\frac{j + 1/2 - \mu_0}{\sigma}\right) .
@@ -1246,7 +1256,7 @@ clamped to ``\{0,\dots,\lceil m/2 \rceil - 1\}``. In both procedures ``\mu_0 = m
 one sample ``n(n+1)/4 = m/2``, for two ``n_x n_y / 2 = m/2``.
 
 ``\sigma`` is the tie-corrected standard deviation of
-[§2.2.3](@ref "2.2.3 Normal approximation") or [§3.2.3](@ref "3.2.3 Normal approximation"), so
+[§2.2.3](@ref "2.2.3 The normal approximation") or [§3.2.3](@ref "3.2.3 The normal approximation"), so
 unlike the exact construction this one does respond to ties.
 
 !!! note "The continuity correction is a choice, and both implementations make it"
@@ -1295,11 +1305,11 @@ the zeros). If every difference is zero, every pairwise estimate is zero and the
 degenerates to the point ``0``.
 
 **Ties on the exact route.** [§6.3](@ref "6.3 Exact index") inverts the untied null
-distribution of [§2.2.1](@ref "2.2.1 Exact, no ties") or
-[§3.2.1](@ref "3.2.1 Exact, no ties"). Under ties the relevant null
+distribution of [§2.2.1](@ref "2.2.1 The lattice distribution") or
+[§3.2.1](@ref "3.2.1 The lattice distribution"). Under ties the relevant null
 distribution is the conditional one of
-[§2.2.2](@ref "2.2.2 Exact, ties present") or
-[§3.2.2](@ref "3.2.2 Exact, ties present"), so the attained coverage is approximate rather
+[§2.2.2](@ref "2.2.2 The conditional distribution") or
+[§3.2.2](@ref "3.2.2 The conditional distribution"), so the attained coverage is approximate rather
 than exact. With the endpoints included it errs above the nominal level; excluded, it can
 err well below, through the endpoint atoms
 [§6.2.1](@ref "6.2.1 What happens at the endpoints") measures.
@@ -1379,8 +1389,8 @@ Two labels in that printed output need decoding. `rank sums:` on the signed rank
 gives ``W^+`` of [§2.1](@ref "2.1 Model, estimand, statistic") beside the midranks carried
 by the negative observations, the two summing to ``n(n+1)/2``. And on the approximate
 tests, `normal approximation (μ, σ):` reports the *centred* statistic of
-[§2.2.3](@ref "2.2.3 Normal approximation") or
-[§3.2.3](@ref "3.2.3 Normal approximation") beside the tie-corrected standard deviation,
+[§2.2.3](@ref "2.2.3 The normal approximation") or
+[§3.2.3](@ref "3.2.3 The normal approximation") beside the tie-corrected standard deviation,
 so its first entry is ``W^+ - n(n+1)/4`` or ``U - n_x n_y/2``, not the null mean. The
 other labels say what they mean: `Wilcoxon signed rank statistic:` is ``W^+`` itself, and
 the Mann-Whitney tests report as `Location shift` the ``\Delta`` of
@@ -1506,7 +1516,7 @@ julia> length(HypothesisTests.walsh_averages(filter(!iszero, d)))
 |:---|:---|
 | ``\hat\theta`` | `0.5` |
 | number of pairwise estimates ([§6.6](@ref "6.6 Zeros, ties, and degeneracy")) | `120` = ``15 \cdot 16 / 2``, against `210` = ``20 \cdot 21 / 2`` if zeros were retained |
-| two-sided p-value ([§2.3](@ref "2.3 p-values"), tied branch) | `0.30719`, by the enumeration of [§2.2.2](@ref "2.2.2 Exact, ties present") |
+| two-sided p-value ([§2.3](@ref "2.3 p-values"), tied branch) | `0.30719`, by the enumeration of [§2.2.2](@ref "2.2.2 The conditional distribution") |
 
 ### 8.3 Two samples, no ties
 
@@ -1620,14 +1630,14 @@ name to dispatch on or annotate with, and no supertype joining a procedure's two
 implements [§6](@ref "6. Interval estimation"), and [`hodgeslehmann`](@ref) implements
 [§5](@ref "5. Point estimation").
 
-The exact null distributions of [§2.2.1](@ref "2.2.1 Exact, no ties") and
-[§3.2.1](@ref "3.2.1 Exact, no ties") come from StatsFuns, whose recursions accumulated
+The exact null distributions of [§2.2.1](@ref "2.2.1 The lattice distribution") and
+[§3.2.1](@ref "3.2.1 The lattice distribution") come from StatsFuns, whose recursions accumulated
 lattice counts in `Int` and overflowed silently, until
 [StatsFuns.jl#221](https://github.com/JuliaStats/StatsFuns.jl/pull/221) folded the
 normaliser into them: from exactly ``n = 72`` on the one-sample side, as
-[§2.2.1](@ref "2.2.1 Exact, no ties") warns, and on the two-sample side already at
+[§2.2.1](@ref "2.2.1 The lattice distribution") warns, and on the two-sample side already at
 ``(n_x, n_y) = (31, 34)``, a factor of about three under the normaliser bound of
-[§3.2.1](@ref "3.2.1 Exact, no ties"), because the Löffler recurrence divides by ``u``
+[§3.2.1](@ref "3.2.1 The lattice distribution"), because the Löffler recurrence divides by ``u``
 only after accumulating ``u \, c_{n_x,n_y}(u)``, whose intermediate sums are that much
 larger than the counts. The `[compat]` floor of StatsFuns 2.2.1 is what makes the numerical care
 of those two sections a settled question here rather than a caveat. The tied routes are this
@@ -1648,8 +1658,8 @@ package's own, and are bounded rather than corrected.
     [§4.1](@ref "4.1 Definitions") rather than found by selection as that section describes,
     which bounds the usable sample size at
     [`MAX_PAIRWISE_ESTIMATES`](@ref HypothesisTests.MAX_PAIRWISE_ESTIMATES) of them.
-  - The tied enumerations of [§2.2.2](@ref "2.2.2 Exact, ties present") and
-    [§3.2.2](@ref "3.2.2 Exact, ties present") are bounded by
+  - The tied enumerations of [§2.2.2](@ref "2.2.2 The conditional distribution") and
+    [§3.2.2](@ref "3.2.2 The conditional distribution") are bounded by
     [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N), past which the
     p-value is refused rather than computed.
   - Under ties an `Exact*` test enumerates for its p-value but inverts the untied lattice for
