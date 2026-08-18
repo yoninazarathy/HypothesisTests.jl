@@ -87,9 +87,9 @@ when ``v`` has no ties. Both normal approximations reduce the tie pattern to
 ``T`` and use nothing else from it, reaching it through the null variance of their
 statistic ([§2.1](@ref "2.1 Model, estimand, statistic"),
 [§3.1](@ref "3.1 Model, estimand, statistic")). Neither exact distribution uses ``T``: under
-ties the conditional one conditions on the whole multiset of midranks and enumerates
-([§2.2.2](@ref "2.2.2 The conditional distribution"),
-[§3.2.2](@ref "3.2.2 The conditional distribution")).
+ties the permutation one conditions on the whole multiset of midranks and enumerates
+([§2.2.2](@ref "2.2.2 The permutation distribution"),
+[§3.2.2](@ref "3.2.2 The permutation distribution")).
 
 ### 1.1 Mathematical observations
 
@@ -261,7 +261,7 @@ observations never been recorded, so appending zeros to a sample moves neither `
 the p-value, nor the estimate, nor the interval.
 
 Discarding conditions the test on which observations were non-zero, and so on ``n``, in
-the sense set out in [§2.2.2](@ref "2.2.2 The conditional distribution"). That costs
+the sense set out in [§2.2.2](@ref "2.2.2 The permutation distribution"). That costs
 nothing in exactness, since the retained signs are still independent and each ``\pm`` with
 probability ``1/2`` whatever the zeros did. It does cost information: only ``n`` of the
 ``N`` observations reach the test, and the support of a statistic built from ``n`` ranks is
@@ -326,7 +326,7 @@ Continuity of ``F`` is a convenience rather than a requirement. It makes zeros a
 events of probability zero, so the ranks are the integers ``1, \dots, n`` and the lattice
 distribution of [§2.2.1](@ref "2.2.1 The lattice distribution") applies. Under a
 discrete or mixed ``F`` the procedure remains exact provided ties are handled as in
-[§2.2.2](@ref "2.2.2 The conditional distribution"), which also explains in what sense
+[§2.2.2](@ref "2.2.2 The permutation distribution"), which also explains in what sense
 such a test is exact, and zeros are discarded as in the **Zeros** paragraph above.
 
 What cannot be weakened is symmetry. Testing ``\operatorname{median}(F) = 0`` is a
@@ -347,27 +347,29 @@ point on:
 | distribution | available for | how it is obtained | cost |
 |:---|:---|:---|:---|
 | **lattice** ([§2.2.1](@ref "2.2.1 The lattice distribution")) | untied samples only, ``T(\lvert d \rvert) = 0`` | exactly, by a recursion over the subsets of ``\{1, \dots, n\}`` | ``O(n^3)`` |
-| **conditional** ([§2.2.2](@ref "2.2.2 The conditional distribution")) | any sample, and the only exact one once ``T(\lvert d \rvert) > 0`` | exactly, by enumerating the ``2^n`` sign patterns | ``O(2^n)`` |
+| **permutation** ([§2.2.2](@ref "2.2.2 The permutation distribution")) | any sample, and the only exact one once ``T(\lvert d \rvert) > 0`` | exactly, by enumerating the ``2^n`` sign patterns | ``O(2^n)`` |
 | **normal** ([§2.2.3](@ref "2.2.3 The normal approximation")) | any sample | approximately, from the moments above | ``O(n)`` |
 
 The tie pattern decides which of the three are *available*; it does not by itself decide
 which is used. The costs are per p-value, once the sample is ranked.
 
-The first two are not two distributions but one. The conditional construction is the general
+The first two are not two distributions but one. The permutation construction is the general
 object, and the lattice distribution is the special case it collapses to when no ties occur.
-Conditioning fixes the multiset of midranks the sample produced; absent ties that multiset is
-``\{1, \dots, n\}`` for *every* sample of size ``n``, so it fixes nothing and the
-conditional distribution coincides with the unconditional one. That is also the difference
+The permutation distribution conditions on the multiset of midranks the sample produced;
+absent ties that multiset is
+``\{1, \dots, n\}`` for *every* sample of size ``n``, so conditioning on it fixes nothing
+and the permutation distribution coincides with the unconditional one. That is also the
+difference
 that matters in practice: the lattice distribution depends on the sample through ``n`` alone
-and can be tabulated once, while the conditional one has to be rebuilt for each sample. On
+and can be tabulated once, while the permutation one has to be rebuilt for each sample. On
 untied data the enumeration of
-[§2.2.2](@ref "2.2.2 The conditional distribution") reproduces the recursion of
+[§2.2.2](@ref "2.2.2 The permutation distribution") reproduces the recursion of
 [§2.2.1](@ref "2.2.1 The lattice distribution") to the last digit, at far greater cost, which
 is why the recursion is taken whenever it applies.
 
 **Choosing between them.** There are two decisions here, and they are of different kinds.
 
-**Lattice against conditional** is forced by the data and is not a choice: with no ties the
+**Lattice against permutation** is forced by the data and is not a choice: with no ties the
 midranks are ``1, \dots, n`` and the recursion applies, and with ties they are not, so it
 does not. As noted above the two agree wherever both apply, and
 [§2.3](@ref "2.3 p-values") reads the same three formulas off either.
@@ -386,8 +388,8 @@ number of non-zero differences are the only properties of the data that enter:
 
 | call | ``\lvert d \rvert`` untied | ``\lvert d \rvert`` tied |
 |:---|:---|:---|
-| `SignedRankTest(d)` | lattice for ``n \le 50``, normal above | conditional for ``n \le 15``, normal above |
-| `ExactSignedRankTest(d)` | lattice, at any size | conditional, up to ``n = 25`` |
+| `SignedRankTest(d)` | lattice for ``n \le 50``, normal above | permutation for ``n \le 15``, normal above |
+| `ExactSignedRankTest(d)` | lattice, at any size | permutation, up to ``n = 25`` |
 | `ApproximateSignedRankTest(d)` | normal | normal |
 
 Reading the first row: the normal approximation is what `SignedRankTest` falls back on when
@@ -412,7 +414,7 @@ and pointing at `method = :approximate`, rather than starting an enumeration who
 doubles with every further observation: at ``n = 40`` there would be
 ``2^{40} \approx 1.1 \times 10^{12}`` sign patterns, and the call would not return. The
 bound is a property of this enumeration rather than of the problem;
-[§2.2.2](@ref "2.2.2 The conditional distribution") closes with the polynomial algorithm
+[§2.2.2](@ref "2.2.2 The permutation distribution") closes with the polynomial algorithm
 that would remove it, proposed as
 [issue #370](https://github.com/JuliaStats/HypothesisTests.jl/issues/370). Only the
 p-value is affected. `confint` still returns an interval, since
@@ -464,10 +466,14 @@ in `double`: exact while they stay under ``2^{53}`` and approximate beyond, whic
 different way out of the overflow above. The Julia values are tested against R's, as are
 the p-values and intervals of [§8](@ref "8. Worked values for the rank tests").
 
-#### 2.2.2 The conditional distribution
+#### 2.2.2 The permutation distribution
 
-So called because it is built *conditionally on the midranks the sample actually produced*,
-which under ties differ from sample to sample.
+So called after the permutation-test literature, whose distributions this is one of:
+[Streitberg and Röhmel (1986)](@cite streitberg1986) and `exactRankTests` both carry the
+name, the latter in its distribution functions `dperm`, `pperm` and `qperm`. For one sample
+the "permutations" are sign flips rather than rearrangements, and the name travels across
+anyway. Its defining property is that it is built *conditionally on the midranks the sample
+actually produced*, which under ties differ from sample to sample.
 
 With ties the midranks are not ``1, \dots, n``, so the lattice recursion of
 [§2.2.1](@ref "2.2.1 The lattice distribution"), which counts subsets of ``\{1, \dots, n\}``, no
@@ -523,7 +529,8 @@ below it and three are at or above, so ``q_{\le} = 7/8 = 0.875`` and
 ``\tfrac{1}{2}\sum_i R_i = 3``, as it is for any tie pattern: flipping every sign sends
 ``W^+`` to ``\sum_i R_i - W^+``.
 
-**What "conditional" means here.** The distribution just described is not the distribution
+**What it conditions on.** The permutation distribution is a conditional distribution,
+and the conditioning is worth stating precisely: it is not the distribution
 of ``W^+`` over repeated samples from ``F``. It is the distribution over the ``2^n`` sign
 patterns with the observed absolute values, and therefore their midranks, held fixed at
 what was seen. Every probability in
@@ -569,10 +576,11 @@ algorithm would remove that bound rather than raise it, which is proposed as
 one-sided values agree with [§2.3](@ref "2.3 p-values") exactly; so do its two-sided ones
 here, but for a reason worth recording: `wilcox.exact` doubles nothing, instead summing the
 attainable outcomes at least as extreme on the far side, and for the one-sample statistic
-the two rules coincide because the conditional distribution is symmetric whatever the ties,
-the flip of every sign taking ``W^+`` to ``\sum_i R_i - W^+``. The two-sample conditional
+the two rules coincide because the one-sample permutation distribution is symmetric
+whatever the ties,
+the flip of every sign taking ``W^+`` to ``\sum_i R_i - W^+``. The two-sample permutation
 distribution has no such symmetry, and there the two rules part:
-[§3.2.2](@ref "3.2.2 The conditional distribution").
+[§3.2.2](@ref "3.2.2 The permutation distribution").
 
 #### 2.2.3 The normal approximation
 
@@ -585,8 +593,8 @@ distribution has no such symmetry, and there the two rules part:
 ```
 
 for the centred statistic and the tie-corrected standard deviation. The variance
-correction is exact under the conditional distribution of
-[§2.2.2](@ref "2.2.2 The conditional distribution"), not an approximation to it.
+correction is exact under the permutation distribution of
+[§2.2.2](@ref "2.2.2 The permutation distribution"), not an approximation to it.
 
 ### 2.3 p-values
 
@@ -741,7 +749,7 @@ negates and reverses both, taking the interval of
 
 That the two are interchangeable is what lets an implementation work with whichever is
 convenient, and this package uses the freedom: the tied enumeration of
-[§3.2.2](@ref "3.2.2 The conditional distribution") always enumerates the *smaller*
+[§3.2.2](@ref "3.2.2 The permutation distribution") always enumerates the *smaller*
 sample, since there are fewer subsets to visit, and swaps the two tails afterwards if that
 was ``y``.
 
@@ -760,12 +768,12 @@ variance ``\frac{n_x n_y}{N(N-1)}\sum_i (R_i - \bar R)^2``. Substituting
 Equality is what makes the test exact, because it makes the ``N`` observations
 exchangeable: every assignment of the pooled midranks to the two samples is then equally
 likely, which is the whole of [§3.2.1](@ref "3.2.1 The lattice distribution") and
-[§3.2.2](@ref "3.2.2 The conditional distribution"). As in
+[§3.2.2](@ref "3.2.2 The permutation distribution"). As in
 [§2.1.1](@ref "2.1.1 Assumptions"), continuity of ``F_x`` and ``F_y`` is a
 convenience: it makes ties events of probability zero, so the lattice distribution of
 [§3.2.1](@ref "3.2.1 The lattice distribution") applies. Discrete or mixed
-distributions keep exactness through the conditional enumeration of
-[§3.2.2](@ref "3.2.2 The conditional distribution").
+distributions keep exactness through the permutation enumeration of
+[§3.2.2](@ref "3.2.2 The permutation distribution").
 
 Equality cannot be weakened to ``\mathbb{P}(X > Y) = 1/2``. That weaker statement leaves ``F_x`` and
 ``F_y`` free to differ in spread, and then the pooled observations are no longer
@@ -788,14 +796,14 @@ with the enumeration now over rank assignments rather than sign patterns. Write
 | distribution | available for | how it is obtained | cost |
 |:---|:---|:---|:---|
 | **lattice** ([§3.2.1](@ref "3.2.1 The lattice distribution")) | untied pooled samples only, ``T([x; y]) = 0`` | exactly, by a recursion | ``O\bigl((n_x n_y)^2\bigr)`` |
-| **conditional** ([§3.2.2](@ref "3.2.2 The conditional distribution")) | any sample, and the only exact one once ``T([x; y]) > 0`` | exactly, by enumerating the ``B`` assignments | ``O(B)`` |
+| **permutation** ([§3.2.2](@ref "3.2.2 The permutation distribution")) | any sample, and the only exact one once ``T([x; y]) > 0`` | exactly, by enumerating the ``B`` assignments | ``O(B)`` |
 | **normal** ([§3.2.3](@ref "3.2.3 The normal approximation")) | any sample | approximately, from the moments above | ``O(N)`` |
 
 **Choosing between them.** Exactly as in
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"): the tie pattern decides
 whether the lattice is available, and exact against normal is a choice about cost, so an
 untied sample too large for the recursion still goes through the normal. Here too the
-lattice distribution is the special case of the conditional one in which the pooled midranks
+lattice distribution is the special case of the permutation one in which the pooled midranks
 come out as ``1, \dots, N``, and the two agree wherever both apply.
 
 **In this package.** As in
@@ -806,8 +814,8 @@ pooled size are the only properties of the data that enter:
 
 | call | pooled sample untied | pooled sample tied |
 |:---|:---|:---|
-| `MannWhitneyUTest(x, y)` | lattice for ``N \le 50``, normal above | conditional for ``N \le 10``, normal above |
-| `ExactMannWhitneyUTest(x, y)` | lattice, at any size | conditional, up to ``B = 2^{25}`` |
+| `MannWhitneyUTest(x, y)` | lattice for ``N \le 50``, normal above | permutation for ``N \le 10``, normal above |
+| `ExactMannWhitneyUTest(x, y)` | lattice, at any size | permutation, up to ``B = 2^{25}`` |
 | `ApproximateMannWhitneyUTest(x, y)` | normal | normal |
 
 Again the automatic rule turns to the normal approximation once the sample outgrows its exact
@@ -858,15 +866,15 @@ stated here is the one R uses, in the C routines `pwilcox`, `dwilcox` and `qwilc
 that the two agree is worth checking, and they do, to floating-point precision at every
 attainable ``u`` for ``n_x, n_y \le 7``.
 
-Ties are handled as in [§2.2.2](@ref "2.2.2 The conditional distribution"), by this package's own
+Ties are handled as in [§2.2.2](@ref "2.2.2 The permutation distribution"), by this package's own
 enumeration, on the routing of
 [§3.2](@ref "3.2 Null distribution of the Mann-Whitney statistic"). Neither StatsFuns nor
 base R offers it; `exactRankTests` does, as
-[§2.2.2](@ref "2.2.2 The conditional distribution") records.
+[§2.2.2](@ref "2.2.2 The permutation distribution") records.
 
-#### 3.2.2 The conditional distribution
+#### 3.2.2 The permutation distribution
 
-The recipe of [§2.2.2](@ref "2.2.2 The conditional distribution") carries over with the sign
+The recipe of [§2.2.2](@ref "2.2.2 The permutation distribution") carries over with the sign
 patterns replaced by group assignments. Rank the pooled sample, ties included, fixing the
 ``N`` midranks. Under the null the two samples are exchangeable, so every way of dealing
 ``\min(n_x, n_y)`` of those fixed midranks to the smaller sample is equally likely; walk
@@ -910,8 +918,8 @@ routes of both procedures do.
 ```
 
 for the centred statistic and the tie-corrected standard deviation. As in
-[§2.2.3](@ref "2.2.3 The normal approximation"), the tie correction is exact under the conditional
-distribution of [§3.2.2](@ref "3.2.2 The conditional distribution") rather than an
+[§2.2.3](@ref "2.2.3 The normal approximation"), the tie correction is exact under the permutation
+distribution of [§3.2.2](@ref "3.2.2 The permutation distribution") rather than an
 approximation to it; what is approximate is only the normal shape.
 
 ### 3.3 p-values
@@ -934,7 +942,7 @@ lands on ``n_x n_y / 2`` and that value carries an atom. At ``n_x = n_y = 2`` wi
 
 Exact under ties, and the normal approximation: exactly as in [§2.3](@ref "2.3 p-values"),
 with ``q_{\le}, q_{\ge}`` from
-[§3.2.2](@ref "3.2.2 The conditional distribution") and
+[§3.2.2](@ref "3.2.2 The permutation distribution") and
 ``\mu, \sigma`` from [§3.2.3](@ref "3.2.3 The normal approximation").
 
 Degenerate cases: if ``n_x = 0`` or ``n_y = 0`` there is no pair to compare, ``U = 0`` is
@@ -1208,8 +1216,8 @@ supports.
 At such a ``\theta`` the sample actually tested, ``d - \theta``, is not the untied sample the
 interval was read off. As [§4.2](@ref "4.2 The counting identity") sets out,
 ``\theta = (d_i + d_j)/2`` with ``i \ne j`` leaves two shifted observations equal in absolute
-value and opposite in sign, so the p-value there comes from the tied conditional distribution
-of [§2.2.2](@ref "2.2.2 The conditional distribution"); and ``\theta = d_i`` leaves one of them zero,
+value and opposite in sign, so the p-value there comes from the permutation distribution
+of [§2.2.2](@ref "2.2.2 The permutation distribution"); and ``\theta = d_i`` leaves one of them zero,
 so it comes from a sample one observation shorter. Neither is the distribution whose quantile
 fixed ``k``, so neither need agree with the interval about that point.
 
@@ -1355,9 +1363,9 @@ degenerates to the point ``0``.
 **Ties on the exact interval.** [§6.3](@ref "6.3 Exact index") inverts the lattice
 distribution of [§2.2.1](@ref "2.2.1 The lattice distribution") or
 [§3.2.1](@ref "3.2.1 The lattice distribution"). Under ties the relevant null
-distribution is the conditional one of
-[§2.2.2](@ref "2.2.2 The conditional distribution") or
-[§3.2.2](@ref "3.2.2 The conditional distribution"), so the attained coverage is approximate rather
+distribution is the permutation one of
+[§2.2.2](@ref "2.2.2 The permutation distribution") or
+[§3.2.2](@ref "3.2.2 The permutation distribution"), so the attained coverage is approximate rather
 than exact. With the endpoints included it errs above the nominal level; excluded, it can
 err well below, through the endpoint atoms
 [§6.2.1](@ref "6.2.1 What happens at the endpoints") measures.
@@ -1365,7 +1373,7 @@ err well below, through the endpoint atoms
 The classical construction retains the untied distribution, and this page specifies it.
 Two alternatives exist. One is to decline an exact interval under ties and fall back to
 [§6.4](@ref "6.4 Normal-approximation index"), which is what R's `wilcox.test` does. The
-other is to invert the tied conditional distribution itself, recomputing it at every
+other is to invert the tied permutation distribution itself, recomputing it at every
 candidate shift, which is what `exactRankTests::wilcox.exact` does; being a different
 construction it returns different endpoints, ``(-0.5, 1)`` at ``0.95`` on the sample of
 [§8.2](@ref "8.2 One sample, five zeros and ties among the rest") where the classical
@@ -1564,7 +1572,7 @@ julia> length(HypothesisTests.walsh_averages(filter(!iszero, d)))
 |:---|:---|
 | ``\hat\theta`` | `0.5` |
 | number of pairwise estimates ([§6.6](@ref "6.6 Zeros, ties, and degeneracy")) | `120` = ``15 \cdot 16 / 2``, against `210` = ``20 \cdot 21 / 2`` if zeros were retained |
-| two-sided p-value ([§2.3](@ref "2.3 p-values"), tied branch) | `0.30719`, by the enumeration of [§2.2.2](@ref "2.2.2 The conditional distribution") |
+| two-sided p-value ([§2.3](@ref "2.3 p-values"), tied branch) | `0.30719`, by the enumeration of [§2.2.2](@ref "2.2.2 The permutation distribution") |
 
 ### 8.3 Two samples, no ties
 
@@ -1706,8 +1714,8 @@ package's own, and are bounded rather than corrected.
     [§4.1](@ref "4.1 Definitions") rather than found by selection as that section describes,
     which bounds the usable sample size at
     [`MAX_PAIRWISE_ESTIMATES`](@ref HypothesisTests.MAX_PAIRWISE_ESTIMATES) of them.
-  - The tied enumerations of [§2.2.2](@ref "2.2.2 The conditional distribution") and
-    [§3.2.2](@ref "3.2.2 The conditional distribution") are bounded by
+  - The tied enumerations of [§2.2.2](@ref "2.2.2 The permutation distribution") and
+    [§3.2.2](@ref "3.2.2 The permutation distribution") are bounded by
     [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N), past which the
     p-value is refused rather than computed.
   - Under ties an `Exact*` test enumerates for its p-value but inverts the untied lattice for
