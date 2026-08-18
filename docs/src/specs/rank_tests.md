@@ -536,8 +536,23 @@ sample it accepts as exact comes here. The tied p-value of
 
 Nothing in StatsFuns covers the tied case, and base R declines it: `wilcox.test` warns that
 it cannot compute an exact p-value with ties, or with zeros, and falls back on its normal
-approximation. R's `exactRankTests::wilcox.exact` does compute it, by the shift algorithm
-rather than by enumeration, and this package's tied p-values are tested against it. Its
+approximation. R's
+[`exactRankTests`](https://cran.r-project.org/package=exactRankTests)`::wilcox.exact` does
+compute it, and this package's tied p-values are tested against it.
+
+It does so by a better algorithm, worth naming because the ``O(2^n)`` above is not intrinsic
+to the problem. ``W^+ = \sum_i \varepsilon_i R_i`` with ``\varepsilon \in \{0,1\}^n`` is a
+subset-sum count, so the whole distribution is the coefficient list of
+``\prod_i (1 + z^{2R_i})``, the doubling making the half-integer midranks integral. Building
+that product by convolving one factor at a time, each step shifting the running counts by
+``2R_i`` and adding, gives every coefficient in ``O(n \sum_i R_i) = O(n^3)`` operations
+rather than ``2^n``: the **shift algorithm** of
+[Streitberg and Röhmel (1986)](@cite streitberg1986). The gain is not marginal. On a tied
+sample of ``n = 24`` it returns the same two tails some forty times faster, and at
+``n = 60``, where enumerating ``2^{60} \approx 1.2 \times 10^{18}`` sign patterns is out of
+the question, it still finishes in milliseconds. This package enumerates, and bounds the
+enumeration instead ([§9](@ref "9. The rank tests in this package")); adopting the shift
+algorithm would remove that bound rather than raise it. Its
 one-sided values agree with [§2.3](@ref "2.3 p-values") exactly; so do its two-sided ones
 here, but for a reason worth recording: `wilcox.exact` doubles nothing, instead summing the
 attainable outcomes at least as extreme on the far side, and for the one-sample statistic

@@ -112,8 +112,9 @@ On tied data the `Exact*` p-value is computed by enumeration rather than looked 
 is worth knowing that base R will not compute it at all: `wilcox.test` warns that it cannot
 compute an exact p-value with ties, or with zeros, and returns its normal approximation
 instead, even when `exact = TRUE` is asked for. The comparable reference is the contributed
-package `exactRankTests`, whose `wilcox.exact` does compute the tied distribution, and which
-is what the tied p-values here are tested against. The two agree on every one-sided value;
+package [`exactRankTests`](https://cran.r-project.org/package=exactRankTests), whose
+`wilcox.exact` does compute the tied distribution, and which is what the tied p-values here
+are tested against. The two agree on every one-sided value;
 their two-sided values agree for the signed rank tests and can differ slightly for the
 Mann-Whitney ones, where `wilcox.exact` sums the far tail and this package doubles the
 smaller one. See [§2.2.2](@ref "2.2.2 The conditional distribution") and
