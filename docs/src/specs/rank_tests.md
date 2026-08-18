@@ -859,8 +859,8 @@ The numerical caveat of [§2.2.1](@ref "2.2.1 The lattice distribution") applies
 more force: the normalising constant ``\binom{N}{n_x}`` exceeds ``2^{63}`` for balanced
 samples from ``n_x = n_y = 34``, where ``\binom{68}{34} \approx 2.85 \times 10^{19}``.
 That bounds the counts themselves; an implementation whose intermediate terms exceed the
-counts overflows earlier still, as [§9](@ref "9. The rank tests in this package") records
-of the recurrence below.
+counts overflows earlier still, which is why carrying the normalisation inside the recursion
+matters more here than it does for one sample.
 
 **Implementations.** Here ``G_{n_x,n_y}`` is `StatsFuns.wilcoxcdf(nx, ny, u)`, with
 `wilcoxccdf` for the upper tail. It computes this distribution, but not by the recursion
@@ -1692,17 +1692,11 @@ implements [§6](@ref "6. Interval estimation"), and [`hodgeslehmann`](@ref) imp
 [§5](@ref "5. Point estimation").
 
 The exact null distributions of [§2.2.1](@ref "2.2.1 The lattice distribution") and
-[§3.2.1](@ref "3.2.1 The lattice distribution") come from StatsFuns, whose recursions accumulated
-lattice counts in `Int` and overflowed silently, until
-[StatsFuns.jl#221](https://github.com/JuliaStats/StatsFuns.jl/pull/221) folded the
-normaliser into them: from exactly ``n = 72`` on the one-sample side, as
-[§2.2.1](@ref "2.2.1 The lattice distribution") warns, and on the two-sample side already at
-``(n_x, n_y) = (31, 34)``, a factor of about three under the normaliser bound of
-[§3.2.1](@ref "3.2.1 The lattice distribution"), because the Löffler recurrence divides by ``u``
-only after accumulating ``u \, c_{n_x,n_y}(u)``, whose intermediate sums are that much
-larger than the counts. The `[compat]` floor of StatsFuns 2.2.1 is what makes the numerical care
-of those two sections a settled question here rather than a caveat. The tied routes are this
-package's own, and are bounded rather than corrected.
+[§3.2.1](@ref "3.2.1 The lattice distribution") come from StatsFuns, which carries the
+normalisation inside its recursions rather than accumulating lattice counts, so it takes the
+first of the two routes those sections describe. The `[compat]` floor of StatsFuns 2.2.1 is
+what makes the numerical care of both a settled question here rather than a caveat. The tied
+routes are this package's own, and are bounded rather than corrected.
 
 **Departures from this specification**, recorded here because
 [§7](@ref "7. Relation to other implementations") asks the same of other implementations.
