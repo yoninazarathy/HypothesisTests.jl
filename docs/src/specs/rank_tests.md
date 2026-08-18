@@ -47,8 +47,10 @@ the ``\ell = n`` retained ``|d_i|`` in
 pooled observations in
 [§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)").
 
-Sort those values. Absent ties, the **rank** of a value is its position in that order, and
-the ranks are a permutation of ``1, \dots, \ell``. Tied values occupy a block of
+Sort those values into ascending order. Absent ties, the **rank** of a value is its
+position in that order: the sort gives each of the ``\ell`` values a distinct position in
+``1, \dots, \ell``, so ranking is a bijection from the values onto those positions and the
+ranks it produces are a permutation of them. Tied values occupy a block of
 consecutive positions, and each is instead given the average of the positions in its block,
 its **midrank**. For a vector ``v``,
 
