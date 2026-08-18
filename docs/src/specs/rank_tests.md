@@ -197,33 +197,9 @@ same order for the two-sample statistic.
 
 ### 2.1 Model, estimand, statistic
 
-**Model.** The ``d_i`` are independent. The null hypothesis is that each is symmetric
-about ``0``, meaning ``P(d_i > t) = P(d_i < -t)`` for every ``t``.
-
-That is the whole of what [§2.2](@ref "2.2 Null distribution of the signed rank statistic")
-and [§2.3](@ref "2.3 p-values") use: symmetry about ``0`` makes the signs independent of
-``|d|`` and each ``\pm`` with
-probability ``1/2``, and every null distribution below follows from that alone. In
-particular the ``d_i`` need not be identically distributed for the null distribution to
-hold, though [§5](@ref "5. Point estimation") and [§6](@ref "6. Interval estimation") do
-assume a common ``F``, since the pseudomedian they estimate is a functional of one
-distribution.
-
-Continuity of ``F`` is a convenience rather than a requirement. It makes zeros and ties
-events of probability zero, so the ranks are the integers ``1, \dots, n`` and the lattice
-distribution of [§2.2.1](@ref "2.2.1 Exact, no ties") applies. Under a
-discrete or mixed ``F`` the procedure remains exact provided ties are handled as in
-[§2.2.2](@ref "2.2.2 Exact, ties present"), which also explains in what sense
-such a test is exact, and zeros are discarded as described below.
-
-What cannot be weakened is symmetry. Testing ``\operatorname{median}(F) = 0`` is a
-different problem, and this test does not solve it. ``W^+`` sits at ``n(n+1)/4`` on average
-only when ``F`` is symmetric; an asymmetric ``F`` with median ``0`` has a pseudomedian away
-from ``0``, and ``W^+`` follows the pseudomedian, so it is centred somewhere else and the
-test rejects more often than ``\alpha``. Take ``F`` the law of
-``\mathrm{Exponential}(1) - \ln 2``, whose median is ``0`` and whose pseudomedian is about
-``0.146``: at ``n = 20`` the nominal ``0.05`` two-sided test rejects about ``10\%`` of the
-time.
+**Model.** The ``d_i`` are independent. The null hypothesis is that the distribution of
+each is symmetric about ``0``, meaning ``P(d_i > t) = P(d_i < -t)`` for every ``t``. What
+that requires, and what it does not, is [§2.1.1](@ref "2.1.1 Assumptions").
 
 **Estimand.** The **pseudomedian** of ``F``: the median of ``(d + d')/2`` for independent
 ``d, d' \sim F``. If ``F`` is symmetric about ``\theta`` then the pseudomedian is
@@ -233,10 +209,11 @@ the pseudomedian that [§5](@ref "5. Point estimation") and
 [§6](@ref "6. Interval estimation") estimate.
 
 **Hypotheses.** The null the level is exact for is the one in the Model paragraph above, a
-statement about the whole of ``F`` rather than about a parameter:
+statement about the distributions the ``d_i`` are drawn from rather than about a parameter
+of them:
 
 ```math
-H_0 : \text{each } d_i \text{ is symmetric about } 0 .
+H_0 : P(d_i > t) = P(d_i < -t) \quad \text{for every } t \text{ and every } i .
 ```
 
 Under the location model ``F(t) = F_0(t - \theta)`` with ``F_0`` symmetric about ``0``, so
@@ -321,6 +298,33 @@ Under the null the signs are independent of ``|d|`` and each ``\pm`` with probab
 
 The mean is untouched by ties because the rank total is; the variance is not, because the
 sum of squares is not.
+
+#### 2.1.1 Assumptions
+
+Symmetry about ``0`` is the whole of what
+[§2.2](@ref "2.2 Null distribution of the signed rank statistic") and
+[§2.3](@ref "2.3 p-values") use: it makes the signs independent of ``|d|`` and each ``\pm``
+with probability ``1/2``, and every null distribution below follows from that alone. In
+particular the ``d_i`` need not be identically distributed for the null distribution to
+hold, though [§5](@ref "5. Point estimation") and [§6](@ref "6. Interval estimation") do
+assume a common ``F``, since the pseudomedian they estimate is a functional of one
+distribution.
+
+Continuity of ``F`` is a convenience rather than a requirement. It makes zeros and ties
+events of probability zero, so the ranks are the integers ``1, \dots, n`` and the lattice
+distribution of [§2.2.1](@ref "2.2.1 Exact, no ties") applies. Under a
+discrete or mixed ``F`` the procedure remains exact provided ties are handled as in
+[§2.2.2](@ref "2.2.2 Exact, ties present"), which also explains in what sense
+such a test is exact, and zeros are discarded as in the **Zeros** paragraph above.
+
+What cannot be weakened is symmetry. Testing ``\operatorname{median}(F) = 0`` is a
+different problem, and this test does not solve it. ``W^+`` sits at ``n(n+1)/4`` on average
+only when ``F`` is symmetric; an asymmetric ``F`` with median ``0`` has a pseudomedian away
+from ``0``, and ``W^+`` follows the pseudomedian, so it is centred somewhere else and the
+test rejects more often than ``\alpha``. Take ``F`` the law of
+``\mathrm{Exponential}(1) - \ln 2``, whose median is ``0`` and whose pseudomedian is about
+``0.146``: at ``n = 20`` the nominal ``0.05`` two-sided test rejects about ``10\%`` of the
+time.
 
 ### 2.2 Null distribution of the signed rank statistic
 
@@ -554,28 +558,8 @@ The three subsections are those of
 ### 3.1 Model, estimand, statistic
 
 **Model.** The two samples are independent of each other, each i.i.d. The null hypothesis
-is ``F_x = F_y``, the two distributions equal and otherwise unrestricted.
-
-Equality is what makes the test exact, because it makes the ``N`` observations
-exchangeable: every assignment of the pooled midranks to the two samples is then equally
-likely, which is the whole of [§3.2.1](@ref "3.2.1 Exact, no ties") and
-[§3.2.2](@ref "3.2.2 Exact, ties present"). As in
-[§2.1](@ref "2.1 Model, estimand, statistic"), continuity of ``F_x`` and ``F_y`` is a
-convenience: it makes ties events of probability zero, so the lattice distribution of
-[§3.2.1](@ref "3.2.1 Exact, no ties") applies. Discrete or mixed
-distributions keep exactness through the conditional enumeration of
-[§3.2.2](@ref "3.2.2 Exact, ties present").
-
-Equality cannot be weakened to ``P(X > Y) = 1/2``. That weaker statement leaves ``F_x`` and
-``F_y`` free to differ in spread, and then the pooled observations are no longer
-exchangeable, the null variance in this section is no longer the variance of ``U``, and the
-test does not hold its level. It fails in both directions, according to which sample is
-the larger: for ``X \sim \mathcal{N}(0, 1)`` against ``Y \sim \mathcal{N}(0, 9)``, where
-``P(X > Y) = 1/2`` holds exactly by symmetry, the nominal ``0.05`` two-sided test has size
-about ``0.13`` at ``(n_x, n_y) = (30, 10)`` and about ``0.016`` at ``(10, 30)``. Under
-``F_x = F_y`` both come to ``0.05``. This is the two-sample counterpart of the median
-against pseudomedian trap in [§2.1](@ref "2.1 Model, estimand, statistic"), and it is why
-that section insists on symmetry and this one on equality.
+is ``F_x = F_y``, the two distributions equal and otherwise unrestricted. What that
+requires, and what it does not, is [§3.1.1](@ref "3.1.1 Assumptions").
 
 **Estimand.** Under the **shift model** ``F_x(t) = F_y(t - \Delta)``, the estimand is
 ``\Delta``. Without a shift model the null tested is still equality of the two
@@ -667,6 +651,29 @@ variance ``\frac{n_x n_y}{N(N-1)}\sum_i (R_i - \bar R)^2``. Substituting
 \mathbb{E}[U] = \frac{n_x n_y}{2}, \qquad
 \operatorname{Var}(U) = \frac{n_x n_y}{12}\left(N + 1 - \frac{T([x; y])}{N(N-1)}\right) .
 ```
+
+#### 3.1.1 Assumptions
+
+Equality is what makes the test exact, because it makes the ``N`` observations
+exchangeable: every assignment of the pooled midranks to the two samples is then equally
+likely, which is the whole of [§3.2.1](@ref "3.2.1 Exact, no ties") and
+[§3.2.2](@ref "3.2.2 Exact, ties present"). As in
+[§2.1.1](@ref "2.1.1 Assumptions"), continuity of ``F_x`` and ``F_y`` is a
+convenience: it makes ties events of probability zero, so the lattice distribution of
+[§3.2.1](@ref "3.2.1 Exact, no ties") applies. Discrete or mixed
+distributions keep exactness through the conditional enumeration of
+[§3.2.2](@ref "3.2.2 Exact, ties present").
+
+Equality cannot be weakened to ``P(X > Y) = 1/2``. That weaker statement leaves ``F_x`` and
+``F_y`` free to differ in spread, and then the pooled observations are no longer
+exchangeable, the null variance above is no longer the variance of ``U``, and the
+test does not hold its level. It fails in both directions, according to which sample is
+the larger: for ``X \sim \mathcal{N}(0, 1)`` against ``Y \sim \mathcal{N}(0, 9)``, where
+``P(X > Y) = 1/2`` holds exactly by symmetry, the nominal ``0.05`` two-sided test has size
+about ``0.13`` at ``(n_x, n_y) = (30, 10)`` and about ``0.016`` at ``(10, 30)``. Under
+``F_x = F_y`` both come to ``0.05``. This is the two-sample counterpart of the median
+against pseudomedian trap in [§2.1.1](@ref "2.1.1 Assumptions"), and it is why
+that section insists on symmetry and this one on equality.
 
 ### 3.2 Null distribution of the Mann-Whitney statistic
 
