@@ -104,9 +104,12 @@ else, so no input ordering and no tie-breaking convention enters: permuting ``v`
 average of the positions it occupies for each position it occupies. This is why ties never
 affect the null mean of either statistic.
 
-**Ties shrink the rank spread by exactly ``T(v)/12``.** A group of ``t`` tied values at
-positions ``r+1, \dots, r+t`` takes the common midrank ``r + (t+1)/2``, lowering the sum of
-squares by
+**Ties shrink the rank spread by exactly ``T(v)/12``.** Consider a group of ``t`` tied
+values occupying positions ``r+1, \dots, r+t``. Untied, they would have carried those ``t``
+distinct positions as their ranks, contributing ``\sum_{k=1}^{t} (r+k)^2`` to the sum of
+squares ``\sum_i R_i^2``; tied, each carries the common midrank ``r + (t+1)/2`` instead,
+contributing ``t`` copies of its square. Replacing distinct values by their average always
+lowers a sum of squares, here by
 
 ```math
 \sum_{k=1}^{t} (r+k)^2 \;-\; t\left(r + \tfrac{t+1}{2}\right)^{2}
