@@ -186,12 +186,14 @@ is the only route by which the tie pattern reaches either normal approximation.
 
 ## 2. The one-sample procedure (Wilcoxon signed rank)
 
-Three subsections: the statistic and what it is testing
-([§2.1](@ref "2.1 Model, estimand, statistic")), the distribution it has under the null
-([§2.2](@ref "2.2 Null distribution of the signed rank statistic")), and the p-values read
-off that distribution ([§2.3](@ref "2.3 p-values")).
-[§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)") has the same
-three, in the same order, for the two-sample statistic.
+The signed rank statistic uses both the sign of each ``d_i`` and the rank of its magnitude
+among the others, which is what a single sample has to offer.
+[§2.1](@ref "2.1 Model, estimand, statistic") fixes the model, the estimand and the
+statistic, [§2.2](@ref "2.2 Null distribution of the signed rank statistic") gives the
+distribution that statistic has under the null, and [§2.3](@ref "2.3 p-values") reads the
+p-values off it.
+[§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)") follows the
+same order for the two-sample statistic.
 
 ### 2.1 Model, estimand, statistic
 
@@ -923,7 +925,7 @@ functions of the pairwise estimates and not of the ranks.
 ## 5. Point estimation
 
 The **Hodges-Lehmann estimator** [hodges1963](@cite) is the sample median of the pairwise
-estimates of [§4.1](@ref "4.1 Definitions"). The two cases in turn.
+estimates of [§4.1](@ref "4.1 Definitions"), which gives one estimator per procedure.
 
 **One sample.** The median of the ``n(n+1)/2`` Walsh averages,
 
