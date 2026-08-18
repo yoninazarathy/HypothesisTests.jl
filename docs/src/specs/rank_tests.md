@@ -10,9 +10,9 @@ Specification of two rank procedures and the location inference built on them:
 
 [§2](@ref "2. The one-sample procedure (Wilcoxon signed rank)") and
 [§3](@ref "3. The two-sample procedure (Wilcoxon rank sum, Mann-Whitney U)") take the two
-procedures in turn, each giving the statistic, the three null distributions available for it
-(two exact, one approximate) and when each applies, and the p-value read off whichever is in
-force. The location inference is then common to both: the
+procedures in turn, each giving the statistic, its exact null distribution together with
+the two forms in which it is computed and the normal approximation to it, and the p-value
+read off whichever is in force. The location inference is then common to both: the
 pairwise estimates it is read off ([§4](@ref "4. Pairwise estimates")), the Hodges-Lehmann point
 estimate ([§5](@ref "5. Point estimation")), and the confidence interval obtained by
 inverting either test ([§6](@ref "6. Interval estimation")). The rest relates the
@@ -340,46 +340,44 @@ time.
 
 ### 2.2 Null distribution of the signed rank statistic
 
-A p-value needs a distribution for ``W^+`` under ``H_0``, and there are three to choose
-from. They are named here, and the names are used in place of section numbers from this
-point on:
+A p-value needs the distribution of ``W^+`` under ``H_0``. For a given sample there is
+exactly one exact null distribution; what varies is the form in which it can be computed,
+and whether it is computed at all rather than approximated. The three forms carry names,
+used in place of section numbers from this point on:
 
-| distribution | available for | how it is obtained | cost |
+| name | what it is | available for | cost |
 |:---|:---|:---|:---|
-| **lattice** ([§2.2.1](@ref "2.2.1 The lattice distribution")) | untied samples only, ``T(\lvert d \rvert) = 0`` | exactly, by a recursion over the subsets of ``\{1, \dots, n\}`` | ``O(n^3)`` |
-| **permutation** ([§2.2.2](@ref "2.2.2 The permutation distribution")) | any sample, and the only exact one once ``T(\lvert d \rvert) > 0`` | exactly, by enumerating the ``2^n`` sign patterns | ``O(2^n)`` |
-| **normal** ([§2.2.3](@ref "2.2.3 The normal approximation")) | any sample | approximately, from the moments above | ``O(n)`` |
+| **lattice** ([§2.2.1](@ref "2.2.1 The lattice distribution")) | the exact distribution in its untied form, tabulated by a recursion | untied samples only, ``T(\lvert d \rvert) = 0`` | ``O(n^3)`` |
+| **permutation** ([§2.2.2](@ref "2.2.2 The permutation distribution")) | the exact distribution in general, enumerated from the sample | any sample, and the only exact form once ``T(\lvert d \rvert) > 0`` | ``O(2^n)`` |
+| **normal** ([§2.2.3](@ref "2.2.3 The normal approximation")) | an approximation to it, from the moments above | any sample | ``O(n)`` |
 
-The tie pattern decides which of the three are *available*; it does not by itself decide
-which is used. The costs are per p-value, once the sample is ranked.
+The tie pattern decides which forms are *available*; it does not by itself decide which is
+used. The costs are per p-value, once the sample is ranked.
 
-The first two are not two distributions but one. The permutation construction is the general
-object, and the lattice distribution is the special case it collapses to when no ties occur.
-The permutation distribution conditions on the multiset of midranks the sample produced;
-absent ties that multiset is
-``\{1, \dots, n\}`` for *every* sample of size ``n``, so conditioning on it fixes nothing
-and the permutation distribution coincides with the unconditional one. That is also the
-difference
-that matters in practice: the lattice distribution depends on the sample through ``n`` alone
-and can be tabulated once, while the permutation one has to be rebuilt for each sample. On
-untied data the enumeration of
+Lattice and permutation are two computations of one distribution, not two distributions,
+which is why the table says form and not choice of null. The permutation form conditions on
+the multiset of midranks the sample produced; absent ties that multiset is
+``\{1, \dots, n\}`` for *every* sample of size ``n``, so conditioning on it fixes
+nothing, the distribution is unconditional, and it depends on the sample through ``n``
+alone. That special case is the lattice form, tabulated once where the permutation form is
+rebuilt for each sample. On untied data the enumeration of
 [§2.2.2](@ref "2.2.2 The permutation distribution") reproduces the recursion of
 [§2.2.1](@ref "2.2.1 The lattice distribution") to the last digit, at far greater cost, which
 is why the recursion is taken whenever it applies.
 
 **Choosing between them.** There are two decisions here, and they are of different kinds.
 
-**Lattice against permutation** is forced by the data and is not a choice: with no ties the
-midranks are ``1, \dots, n`` and the recursion applies, and with ties they are not, so it
-does not. As noted above the two agree wherever both apply, and
+**Lattice against permutation** is forced by the data and is not a choice of null: with no
+ties the midranks are ``1, \dots, n`` and the recursion applies, and with ties they are
+not, so it does not. The two forms agree wherever both apply, and
 [§2.3](@ref "2.3 p-values") reads the same three formulas off either.
 
 **Exact against normal** *is* a choice, and it is where the sample size enters: it trades
 the cost above, prohibitive for the enumeration on a large tied sample, against a p-value
 that is only asymptotically right. An untied sample of any size may still be taken through
-the normal, and a large one usually is. The normal is also the only one of the three that
-responds to ties through ``T``, since the other two condition on the midranks rather than
-summarise them.
+the normal, and a large one usually is. The normal is also the only form that
+responds to ties through ``T``, since the exact distribution conditions on the midranks
+rather than summarising them.
 
 **In this package.** Two types implement the procedure, `ExactSignedRankTest` and
 `ApproximateSignedRankTest`. `SignedRankTest` is not a third: it is a function that ranks
@@ -788,23 +786,23 @@ that section insists on symmetry and this one on equality.
 
 ### 3.2 Null distribution of the Mann-Whitney statistic
 
-The same three distributions as in
+One exact null distribution and the same three forms as in
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"), carrying the same names,
 with the enumeration now over rank assignments rather than sign patterns. Write
 ``B = \binom{N}{\min(n_x, n_y)}`` for the number of those assignments:
 
-| distribution | available for | how it is obtained | cost |
+| name | what it is | available for | cost |
 |:---|:---|:---|:---|
-| **lattice** ([§3.2.1](@ref "3.2.1 The lattice distribution")) | untied pooled samples only, ``T([x; y]) = 0`` | exactly, by a recursion | ``O\bigl((n_x n_y)^2\bigr)`` |
-| **permutation** ([§3.2.2](@ref "3.2.2 The permutation distribution")) | any sample, and the only exact one once ``T([x; y]) > 0`` | exactly, by enumerating the ``B`` assignments | ``O(B)`` |
-| **normal** ([§3.2.3](@ref "3.2.3 The normal approximation")) | any sample | approximately, from the moments above | ``O(N)`` |
+| **lattice** ([§3.2.1](@ref "3.2.1 The lattice distribution")) | the exact distribution in its untied form, tabulated by a recursion | untied pooled samples only, ``T([x; y]) = 0`` | ``O\bigl((n_x n_y)^2\bigr)`` |
+| **permutation** ([§3.2.2](@ref "3.2.2 The permutation distribution")) | the exact distribution in general, enumerated from the sample | any sample, and the only exact form once ``T([x; y]) > 0`` | ``O(B)`` |
+| **normal** ([§3.2.3](@ref "3.2.3 The normal approximation")) | an approximation to it, from the moments above | any sample | ``O(N)`` |
 
 **Choosing between them.** Exactly as in
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"): the tie pattern decides
-whether the lattice is available, and exact against normal is a choice about cost, so an
-untied sample too large for the recursion still goes through the normal. Here too the
-lattice distribution is the special case of the permutation one in which the pooled midranks
-come out as ``1, \dots, N``, and the two agree wherever both apply.
+whether the lattice form is available, and exact against normal is a choice about cost, so
+an untied sample too large for the recursion still goes through the normal. Here too
+lattice and permutation are two computations of the one exact distribution, coinciding
+whenever the pooled midranks come out as ``1, \dots, N``.
 
 **In this package.** As in
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"), two types implement the
