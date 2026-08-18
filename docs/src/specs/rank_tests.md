@@ -31,9 +31,11 @@ specification onto them and records where they depart from it.
 
 | symbol | meaning |
 |:---|:---|
-| ``d_1, \dots, d_N`` | the one-sample input; for paired data ``d_i = x_i - y_i`` |
+| ``D_1, \dots, D_N`` | the one-sample observations as random variables |
+| ``d_1, \dots, d_N`` | the values they took, which is what is computed from; for paired data ``d_i = x_i - y_i`` |
 | ``n`` | the number of ``d_i`` with ``d_i \ne 0`` |
-| ``x_1, \dots, x_{n_x}``, ``y_1, \dots, y_{n_y}`` | the two-sample inputs |
+| ``X_1, \dots, X_{n_x}``, ``Y_1, \dots, Y_{n_y}`` | the two-sample observations as random variables |
+| ``x_1, \dots, x_{n_x}``, ``y_1, \dots, y_{n_y}`` | the values they took |
 | ``N`` | the total number of observations: the number of ``d_i``, zeros included, one-sample; ``n_x + n_y`` two-sample |
 | ``\alpha`` | two-sided error rate; the interval has nominal coverage ``1-\alpha`` |
 | ``z_q`` | the ``q`` quantile of the standard normal distribution |
@@ -41,6 +43,14 @@ specification onto them and records where they depart from it.
 | ``\ell`` | the number of values being ranked at once |
 | ``m`` | the number of pairwise estimates of [§4](@ref "4. Pairwise estimates") |
 | ``V_{(1)} \le \dots \le V_{(m)}`` | those pairwise estimates, sorted |
+
+**Random variables and their values.** Capitals denote random variables and lowercase the
+values they took: ``D_i`` is an observation of the one-sample procedure regarded as random,
+``d_i`` the number in hand. Every hypothesis and every null distribution on this page is a
+statement about the capitals; everything computed, the ranks, the statistics, the estimates
+and the intervals, is a function of the lowercase. The statistics ``W^+`` and ``U`` are
+written as capitals throughout, since which is meant is fixed by context: inside a
+probability they are random, and elsewhere they are the observed value.
 
 **Ranks and midranks.** Ranking always happens on a single vector of ``\ell`` values:
 the ``\ell = n`` retained ``|d_i|`` in
@@ -198,23 +208,23 @@ same order for the two-sample statistic.
 
 ### 2.1 Model, estimand, statistic
 
-**Model.** The ``d_i`` are independent. The null hypothesis is that the distribution of
-each is symmetric about ``0``, meaning ``P(d_i > t) = P(d_i < -t)`` for every ``t``. What
-that requires, and what it does not, is [§2.1.1](@ref "2.1.1 Assumptions").
+**Model.** The observations are independent random variables ``D_1, \dots, D_N``. The null
+hypothesis is that the distribution of each is symmetric about ``0``, meaning
+``P(D_i > t) = P(D_i < -t)`` for every ``t``. What that requires, and what it does not, is
+[§2.1.1](@ref "2.1.1 Assumptions").
 
-**Estimand.** The **pseudomedian** of ``F``: the median of ``(d + d')/2`` for independent
-``d, d' \sim F``. If ``F`` is symmetric about ``\theta`` then the pseudomedian is
+**Estimand.** The **pseudomedian** of ``F``: the median of ``(D + D')/2`` for independent
+``D, D' \sim F``. If ``F`` is symmetric about ``\theta`` then the pseudomedian is
 ``\theta``, and coincides with the median of ``F`` and, where it exists, with the mean.
 For asymmetric ``F`` the pseudomedian is a different functional from the median, and it is
 the pseudomedian that [§5](@ref "5. Point estimation") and
 [§6](@ref "6. Interval estimation") estimate.
 
 **Hypotheses.** The null the level is exact for is the one in the Model paragraph above, a
-statement about the distributions the ``d_i`` are drawn from rather than about a parameter
-of them:
+statement about the distributions of the ``D_i`` rather than about a parameter of them:
 
 ```math
-H_0 : P(d_i > t) = P(d_i < -t) \quad \text{for every } t \text{ and every } i .
+H_0 : P(D_i > t) = P(D_i < -t) \quad \text{for every } t \text{ and every } i .
 ```
 
 Under the location model ``F(t) = F_0(t - \theta)`` with ``F_0`` symmetric about ``0``, so
@@ -285,7 +295,7 @@ values, so the support is ``\{0, 1, \dots, n(n+1)/2\}``; under ties the midranks
 half-integers and so is ``W^+``. At ``n = 2`` with the two absolute values equal, both
 midranks are ``1.5`` and the support is ``\{0,\, 1.5,\, 3\}``.
 
-Under the null the signs are independent of ``|d|`` and each ``\pm`` with probability
+Under the null the signs are independent of ``|D|`` and each ``\pm`` with probability
 ``1/2``, so conditionally on the midranks ``W^+ = \sum_i R_i B_i`` with
 ``B_i \overset{\text{iid}}{\sim} \mathrm{Bernoulli}(1/2)``. Hence
 ``\mathbb{E}[W^+] = \tfrac{1}{2}\sum_i R_i`` and
@@ -306,7 +316,7 @@ Symmetry about ``0`` is the whole of what
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic") and
 [§2.3](@ref "2.3 p-values") use: it makes the signs independent of ``|d|`` and each ``\pm``
 with probability ``1/2``, and every null distribution below follows from that alone. In
-particular the ``d_i`` need not be identically distributed for the null distribution to
+particular the ``D_i`` need not be identically distributed for the null distribution to
 hold, though [§5](@ref "5. Point estimation") and [§6](@ref "6. Interval estimation") do
 assume a common ``F``, since the pseudomedian they estimate is a functional of one
 distribution.
@@ -340,8 +350,7 @@ point on:
 | **normal** ([§2.2.3](@ref "2.2.3 The normal approximation")) | any sample | approximately, from the moments above | ``O(n)`` |
 
 The tie pattern decides which of the three are *available*; it does not by itself decide
-which is used. The costs are per p-value, and follow the ranking, which is
-``O(n \log n)`` in itself.
+which is used. The costs are per p-value, once the sample is ranked.
 
 The first two are the same distribution wherever both are available: on an untied sample
 the conditional enumeration returns exactly what the lattice recursion does, at far greater
@@ -407,8 +416,8 @@ So called because with no ties the statistic lives on the integer lattice: the m
 ``1, \dots, n`` whatever the data, so the distribution depends on the sample through ``n``
 alone and can be tabulated once rather than rebuilt per sample.
 
-Under the null the signs of the ``d_i`` are independent, each ``\pm`` with probability
-``1/2``, and independent of ``|d|``. With no ties the midranks are the integers
+Under the null the signs of the ``D_i`` are independent, each ``\pm`` with probability
+``1/2``, and independent of ``|D|``. With no ties the midranks are the integers
 ``1, \dots, n``, so
 
 ```math
@@ -455,7 +464,7 @@ directly from the sample in hand, in three steps:
 
 1. Rank the observed ``|d_i|``, ties included, giving midranks ``R_1, \dots, R_n``. These
    are now fixed numbers, not ``1, \dots, n``.
-2. Under the null each sign is ``\pm`` with probability ``1/2`` independently of ``|d|``,
+2. Under the null each sign is ``\pm`` with probability ``1/2`` independently of ``|D|``,
    so all ``2^n`` ways of attaching signs to those fixed midranks are equally likely. Walk
    through all of them, and for each compute the value ``W^+`` would have taken:
    ``\sum_i \varepsilon_i R_i`` with ``\varepsilon_i \in \{0,1\}`` saying whether
@@ -509,7 +518,7 @@ what was seen. Every probability in
 [§2.3](@ref "2.3 p-values") is computed in that fixed-``|d|`` distribution.
 
 Two things make this the right object rather than a retreat from one. Under the null the
-signs are independent of ``|d|``, so fixing ``|d|`` discards nothing that bears on the
+signs are independent of ``|D|``, so fixing ``|d|`` discards nothing that bears on the
 null. And a test whose level is exactly ``\alpha`` for every possible value of ``|d|`` has
 level exactly ``\alpha`` when averaged over ``|d|``, which is the unconditional statement:
 conditional exactness is the stronger property, not a weaker substitute for it. That is
@@ -621,8 +630,9 @@ The three subsections are those of
 
 ### 3.1 Model, estimand, statistic
 
-**Model.** The two samples are independent of each other, each i.i.d. The null hypothesis
-is ``F_x = F_y``, the two distributions equal and otherwise unrestricted. What that
+**Model.** The two samples are independent random variables ``X_1, \dots, X_{n_x}`` and
+``Y_1, \dots, Y_{n_y}``, independent of each other and i.i.d. within each sample. The null
+hypothesis is ``F_x = F_y``, the two distributions equal and otherwise unrestricted. What that
 requires, and what it does not, is [§3.1.1](@ref "3.1.1 Assumptions").
 
 **Estimand.** Under the **shift model** ``F_x(t) = F_y(t - \Delta)``, the estimand is
