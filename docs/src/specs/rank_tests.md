@@ -352,10 +352,17 @@ point on:
 The tie pattern decides which of the three are *available*; it does not by itself decide
 which is used. The costs are per p-value, once the sample is ranked.
 
-The first two are the same distribution wherever both are available: on an untied sample
-the conditional enumeration returns exactly what the lattice recursion does, at far greater
-cost, which is why the recursion is taken whenever it applies. The names reflect how each
-is reached, not two different notions of the null.
+The first two are not two distributions but one. The conditional construction is the general
+object, and the lattice distribution is the special case it collapses to when no ties occur.
+Conditioning fixes the multiset of midranks the sample produced; absent ties that multiset is
+``\{1, \dots, n\}`` for *every* sample of size ``n``, so it fixes nothing and the
+conditional distribution coincides with the unconditional one. That is also the difference
+that matters in practice: the lattice distribution depends on the sample through ``n`` alone
+and can be tabulated once, while the conditional one has to be rebuilt for each sample. On
+untied data the enumeration of
+[§2.2.2](@ref "2.2.2 The conditional distribution") reproduces the recursion of
+[§2.2.1](@ref "2.2.1 The lattice distribution") to the last digit, at far greater cost, which
+is why the recursion is taken whenever it applies.
 
 **Choosing between them.** There are two decisions here, and they are of different kinds.
 
@@ -780,7 +787,9 @@ with the enumeration now over rank assignments rather than sign patterns. Write
 **Choosing between them.** Exactly as in
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"): the tie pattern decides
 whether the lattice is available, and exact against normal is a choice about cost, so an
-untied sample too large for the recursion still goes through the normal.
+untied sample too large for the recursion still goes through the normal. Here too the
+lattice distribution is the special case of the conditional one in which the pooled midranks
+come out as ``1, \dots, N``, and the two agree wherever both apply.
 
 **In this package.** As in
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"), two types implement the
