@@ -20,10 +20,11 @@ specification to other implementations
 ([§7](@ref "7. Relation to other implementations")) and gives worked values for checking
 one ([§8](@ref "8. Worked values for the rank tests")).
 
-**In this package.** The one-sample procedure is [`SignedRankTest`](@ref),
-[`ExactSignedRankTest`](@ref) and [`ApproximateSignedRankTest`](@ref); the two-sample
-procedure is [`MannWhitneyUTest`](@ref), [`ExactMannWhitneyUTest`](@ref) and
-[`ApproximateMannWhitneyUTest`](@ref). [§9](@ref "9. The rank tests in this package") maps the
+**In this package.** The one-sample procedure is [`ExactSignedRankTest`](@ref) and
+[`ApproximateSignedRankTest`](@ref), the two-sample procedure
+[`ExactMannWhitneyUTest`](@ref) and [`ApproximateMannWhitneyUTest`](@ref);
+[`SignedRankTest`](@ref) and [`MannWhitneyUTest`](@ref) are functions that pick one of those
+four rather than types of their own. [§9](@ref "9. The rank tests in this package") maps the
 specification onto them and records where they depart from it.
 
 ## 1. Preliminaries and notation
@@ -359,10 +360,12 @@ that is only asymptotically right. An untied sample of any size may still be tak
 approximate route is also the only one of the three whose distribution responds to ties
 through ``T``, since the exact routes condition on the midranks rather than summarise them.
 
-**In this package.** The constructor decides, and the tie pattern is the only property of
-the data that enters:
+**In this package.** Two types implement the procedure, `ExactSignedRankTest` and
+`ApproximateSignedRankTest`. `SignedRankTest` is not a third: it is a function that ranks
+the sample, applies the rule below, and returns one of those two. The tie pattern and the
+number of non-zero differences are the only properties of the data that enter:
 
-|  | ``\lvert d \rvert`` untied | ``\lvert d \rvert`` tied |
+| call | ``\lvert d \rvert`` untied | ``\lvert d \rvert`` tied |
 |:---|:---|:---|
 | `SignedRankTest(d)` | [§2.2.1](@ref "2.2.1 Exact, no ties") for ``n \le 50``, [§2.2.3](@ref "2.2.3 Normal approximation") for ``n > 50`` | [§2.2.2](@ref "2.2.2 Exact, ties present") for ``n \le 15``, [§2.2.3](@ref "2.2.3 Normal approximation") for ``n > 15`` |
 | `ExactSignedRankTest(d)` | [§2.2.1](@ref "2.2.1 Exact, no ties"), at any size | [§2.2.2](@ref "2.2.2 Exact, ties present"), up to ``n = 25`` |
@@ -376,9 +379,12 @@ any two of the ``\lvert d_i \rvert`` are equal. Here ``n`` counts the non-zero d
 the zeros of [§2.1](@ref "2.1 Model, estimand, statistic") are discarded before the rule is
 applied.
 
-`method = :exact` or `method = :approximate` overrides the rule on `SignedRankTest`, and a
-callable, passed `(; n, n_nonzero, ties, tie_adjustment)` and returning one of those two
-symbols, replaces it with a rule of the caller's own.
+Because the rule reads the data, a `SignedRankTest` call has no one return type: the same
+expression yields an `ExactSignedRankTest` on one sample and an `ApproximateSignedRankTest`
+on another. `method = :exact` or `method = :approximate` overrides the rule and fixes which,
+which is what an analysis that must reproduce across versions should do; naming the type
+directly does the same. A callable, passed `(; n, n_nonzero, ties, tie_adjustment)` and
+returning one of those two symbols, replaces the rule with one of the caller's own.
 
 Forcing the exact route on a large tied sample is declined rather than served slowly. Beyond
 [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N) ``= 25`` non-zero
@@ -432,18 +438,59 @@ the p-values and intervals of [§8](@ref "8. Worked values for the rank tests").
 
 #### 2.2.2 Exact, ties present
 
-With ties the midranks are not ``1, \dots, n`` and the recursion above does not apply.
-The sign-symmetry argument still does: conditionally on the observed multiset of
-midranks, the ``2^n`` sign assignments are equally likely under the null. The exact
-conditional null distribution is therefore obtained by enumerating them,
+With ties the midranks are not ``1, \dots, n``, so the lattice recursion of
+[§2.2.1](@ref "2.2.1 Exact, no ties"), which counts subsets of ``\{1, \dots, n\}``, no
+longer describes the statistic. What is done instead is to build the null distribution
+directly from the sample in hand, in three steps:
+
+1. Rank the observed ``|d_i|``, ties included, giving midranks ``R_1, \dots, R_n``. These
+   are now fixed numbers, not ``1, \dots, n``.
+2. Under the null each sign is ``\pm`` with probability ``1/2`` independently of ``|d|``,
+   so all ``2^n`` ways of attaching signs to those fixed midranks are equally likely. Walk
+   through all of them, and for each compute the value ``W^+`` would have taken:
+   ``\sum_i \varepsilon_i R_i`` with ``\varepsilon_i \in \{0,1\}`` saying whether
+   observation ``i`` was counted as positive.
+3. The resulting multiset of ``2^n`` values, each with weight ``2^{-n}``, *is* the null
+   distribution. Tail probabilities are counts of it.
+
+That is, the distribution is not looked up or approximated; it is tabulated by brute force
+from the observed midranks, which is why ties cost ``O(2^n)`` where their absence costs a
+polynomial recursion. Formally,
 
 ```math
-P(W^+ \le w) = 2^{-n} \, \#\Bigl\{ \varepsilon \in \{0,1\}^n : \textstyle\sum_i \varepsilon_i R_i \le w \Bigr\} ,
+P(W^+ \le w) = 2^{-n} \, \#\Bigl\{ \varepsilon \in \{0,1\}^n : \textstyle\sum_i \varepsilon_i R_i \le w \Bigr\} .
 ```
 
-at cost ``O(2^n)``. The proportions of assignments falling at or below and at or above the
+The proportions of assignments falling at or below and at or above the
 observed ``W^+`` are written ``q_{\le}`` and ``q_{\ge}``, and are what
 [§2.3](@ref "2.3 p-values") uses.
+
+**Worked, in full.** Take ``d = (1.5,\, -1.5,\, 2.0)``. The absolute values are
+``(1.5, 1.5, 2.0)``: the two ``1.5``s share positions ``1`` and ``2`` and so take the
+midrank ``1.5`` each, and ``2.0`` takes ``3``. Observed
+``W^+ = 1.5 + 3 = 4.5``, the first and third observations being the positive ones. All
+``2^3 = 8`` sign assignments to the fixed midranks ``(1.5, 1.5, 3)``:
+
+| signs of ``(d_1, d_2, d_3)`` | midranks counted | ``W^+`` |
+|:---|:---|:---|
+| ``-\,-\,-`` | none | ``0`` |
+| ``+\,-\,-`` | ``1.5`` | ``1.5`` |
+| ``-\,+\,-`` | ``1.5`` | ``1.5`` |
+| ``-\,-\,+`` | ``3`` | ``3`` |
+| ``+\,+\,-`` | ``1.5 + 1.5`` | ``3`` |
+| ``+\,-\,+`` | ``1.5 + 3`` | ``4.5`` |
+| ``-\,+\,+`` | ``1.5 + 3`` | ``4.5`` |
+| ``+\,+\,+`` | ``1.5 + 1.5 + 3`` | ``6`` |
+
+so the null distribution is ``0, 1.5, 3, 4.5, 6`` with probabilities
+``\tfrac{1}{8}, \tfrac{2}{8}, \tfrac{2}{8}, \tfrac{2}{8}, \tfrac{1}{8}``. The tie has
+collapsed what would have been six distinct rank sums onto five values, which is exactly
+how it enters. At the observed ``W^+ = 4.5``, seven of the eight assignments are at or
+below it and three are at or above, so ``q_{\le} = 7/8 = 0.875`` and
+``q_{\ge} = 3/8 = 0.375``, giving the two-sided ``p = 2 \times 0.375 = 0.75`` by
+[§2.3](@ref "2.3 p-values"). Note the distribution is symmetric about
+``\tfrac{1}{2}\sum_i R_i = 3``, as it is for any tie pattern: flipping every sign sends
+``W^+`` to ``\sum_i R_i - W^+``.
 
 **What "conditional" means here.** The distribution just described is not the distribution
 of ``W^+`` over repeated samples from ``F``. It is the distribution over the ``2^n`` sign
@@ -701,10 +748,12 @@ untied sample too large for the recursion still goes through
 [§3.2.3](@ref "3.2.3 Normal approximation").
 
 **In this package.** As in
-[§2.2](@ref "2.2 Null distribution of the signed rank statistic"), the constructor decides
-and the tie pattern is the only property of the data that enters:
+[§2.2](@ref "2.2 Null distribution of the signed rank statistic"), two types implement the
+procedure, `ExactMannWhitneyUTest` and `ApproximateMannWhitneyUTest`, and `MannWhitneyUTest`
+is a function returning one of them rather than a type of its own. The tie pattern and the
+pooled size are the only properties of the data that enter:
 
-|  | pooled sample untied | pooled sample tied |
+| call | pooled sample untied | pooled sample tied |
 |:---|:---|:---|
 | `MannWhitneyUTest(x, y)` | [§3.2.1](@ref "3.2.1 Exact, no ties") for ``N \le 50``, [§3.2.3](@ref "3.2.3 Normal approximation") for ``N > 50`` | [§3.2.2](@ref "3.2.2 Exact, ties present") for ``N \le 10``, [§3.2.3](@ref "3.2.3 Normal approximation") for ``N > 10`` |
 | `ExactMannWhitneyUTest(x, y)` | [§3.2.1](@ref "3.2.1 Exact, no ties"), at any size | [§3.2.2](@ref "3.2.2 Exact, ties present"), up to ``B = 2^{25}`` |
@@ -765,14 +814,31 @@ offers it.
 
 #### 3.2.2 Exact, ties present
 
-As in [§2.2.2](@ref "2.2.2 Exact, ties present"), the exact conditional null
-distribution is obtained by enumeration, here over the ``\binom{N}{\min(n_x, n_y)}``
-assignments of the observed midranks to the smaller sample, and the same three p-value
-formulas follow.
+The recipe of [§2.2.2](@ref "2.2.2 Exact, ties present") carries over with the sign
+patterns replaced by group assignments. Rank the pooled sample, ties included, fixing the
+``N`` midranks. Under the null the two samples are exchangeable, so every way of dealing
+``\min(n_x, n_y)`` of those fixed midranks to the smaller sample is equally likely; walk
+through all ``\binom{N}{\min(n_x, n_y)}`` of them, compute the ``U`` each would give, and
+the resulting multiset, each member weighted equally, is the null distribution. The same
+three p-value formulas then follow.
 
-Unlike its one-sample counterpart, this conditional distribution is in general *not*
-symmetric: reflecting the midranks requires the tie pattern to read the same from both ends,
-which nothing guarantees. The one-sided p-values are unaffected. The two-sided one is where
+On ``x = (1, 2)`` against ``y = (2, 3, 4)`` the pooled midranks are
+``(1,\, 2.5,\, 2.5,\, 4,\, 5)``, the two ``2``s sharing positions ``2`` and ``3``.
+Dealing two of them to ``x`` in all ``\binom{5}{2} = 10`` ways gives
+
+```math
+U \in \{0.5,\, 2,\, 3,\, 3.5,\, 4.5,\, 6\}
+\quad\text{with counts}\quad 2,\, 2,\, 1,\, 2,\, 2,\, 1 \ \text{out of } 10 ,
+```
+
+and the observed ``U = 0.5``.
+
+That distribution is worth a second look, because unlike its one-sample counterpart it is
+in general *not* symmetric. Here the centre would be ``n_x n_y / 2 = 3``, yet ``0.5`` carries
+weight ``2/10`` while its reflection ``5.5`` carries none. Symmetry would need the tie
+pattern to read the same from both ends, which nothing guarantees.
+
+The one-sided p-values are unaffected by that. The two-sided one is where
 conventions part, since doubling the smaller tail and summing the far tail now disagree:
 on ``x = 1, \dots, 10`` against ``y = 2, 4, \dots, 24``, the doubling of
 [§3.3](@ref "3.3 p-values") gives ``0.0120035`` where `exactRankTests::wilcox.exact`,
@@ -1537,15 +1603,18 @@ negates and reverses, and the two-sided p-value does not move.
 
 ## 9. The rank tests in this package
 
-The one-sample procedure is [`SignedRankTest`](@ref), [`ExactSignedRankTest`](@ref) and
-[`ApproximateSignedRankTest`](@ref); the two-sample procedure is
-[`MannWhitneyUTest`](@ref), [`ExactMannWhitneyUTest`](@ref) and
-[`ApproximateMannWhitneyUTest`](@ref). The `Exact*` types implement
-[§6.3](@ref "6.3 Exact index"), the `Approximate*` types
-[§6.4](@ref "6.4 Normal-approximation index"), and the dispatchers select between them by
-sample size and tie pattern unless the `method` keyword says otherwise. The two selection
-rules are stated in full in [§2.2](@ref "2.2 Null distribution of the signed rank statistic")
-and [§3.2](@ref "3.2 Null distribution of the Mann-Whitney statistic").
+Four types implement the two procedures: [`ExactSignedRankTest`](@ref) and
+[`ApproximateSignedRankTest`](@ref) for one sample,
+[`ExactMannWhitneyUTest`](@ref) and [`ApproximateMannWhitneyUTest`](@ref) for two. The
+`Exact*` types implement [§6.3](@ref "6.3 Exact index") and the `Approximate*` types
+[§6.4](@ref "6.4 Normal-approximation index").
+
+[`SignedRankTest`](@ref) and [`MannWhitneyUTest`](@ref) are functions rather than types.
+Each ranks the sample, applies the selection rule of
+[§2.2](@ref "2.2 Null distribution of the signed rank statistic") or
+[§3.2](@ref "3.2 Null distribution of the Mann-Whitney statistic") unless the `method`
+keyword says otherwise, and returns one of the four types above. There is no type of either
+name to dispatch on or annotate with, and no supertype joining a procedure's two.
 
 `pvalue` implements [§2.3](@ref "2.3 p-values") and [§3.3](@ref "3.3 p-values"), `confint`
 implements [§6](@ref "6. Interval estimation"), and [`hodgeslehmann`](@ref) implements
