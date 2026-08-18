@@ -329,15 +329,20 @@ time.
 ### 2.2 Null distribution of the signed rank statistic
 
 Three distributions are in play, and a p-value is read off exactly one of them for a given
-sample:
+sample. The tie pattern decides which of them are *available*; it does not by itself decide
+which is used:
 
-|  | when it applies | the distribution | cost |
+| route | available for | the distribution | cost |
 |:---|:---|:---|:---|
-| [§2.2.1](@ref "2.2.1 Exact, no ties") | ``T(\lvert d \rvert) = 0`` | exact, by a lattice recursion | ``O(n^3)`` |
-| [§2.2.2](@ref "2.2.2 Exact, ties present") | ``T(\lvert d \rvert) > 0`` | exact, by enumerating ``2^n`` sign patterns | ``O(2^n)`` |
+| [§2.2.1](@ref "2.2.1 Exact, no ties") | untied samples only, ``T(\lvert d \rvert) = 0`` | exact, by a lattice recursion | ``O(n^3)`` |
+| [§2.2.2](@ref "2.2.2 Exact, ties present") | any sample, and the only exact route once ``T(\lvert d \rvert) > 0`` | exact, by enumerating ``2^n`` sign patterns | ``O(2^n)`` |
 | [§2.2.3](@ref "2.2.3 Normal approximation") | any sample | normal, with the moments above | ``O(n)`` |
 
-The costs are per p-value, and follow the ranking, which is ``O(n \log n)`` in itself.
+The costs are per p-value, and follow the ranking, which is ``O(n \log n)`` in itself. The
+two exact rows describe the same distribution: on an untied sample the enumeration of
+[§2.2.2](@ref "2.2.2 Exact, ties present") returns exactly what the recursion of
+[§2.2.1](@ref "2.2.1 Exact, no ties") does, at far greater cost, which is why the recursion
+is taken whenever it is available.
 
 **Choosing between them.** There are two decisions here, and they are of different kinds.
 
@@ -347,8 +352,10 @@ so the recursion does not. The two are one route in substance, differing only in
 same conditional distribution is reached, and
 [§2.3](@ref "2.3 p-values") reads the same three formulas off either.
 
-Exact against approximate *is* a choice: it trades the cost above, prohibitive for the
-enumeration on a large tied sample, against a p-value that is only asymptotically right. The
+Exact against approximate *is* a choice, and it is where the sample size enters: it trades
+the cost above, prohibitive for the enumeration on a large tied sample, against a p-value
+that is only asymptotically right. An untied sample of any size may still be taken through
+[§2.2.3](@ref "2.2.3 Normal approximation"), and a large one usually is. The
 approximate route is also the only one of the three whose distribution responds to ties
 through ``T``, since the exact routes condition on the midranks rather than summarise them.
 
@@ -681,15 +688,17 @@ The three routes of [§2.2](@ref "2.2 Null distribution of the signed rank stati
 the enumeration now over rank assignments rather than sign patterns. Write
 ``B = \binom{N}{\min(n_x, n_y)}`` for the number of those assignments:
 
-|  | when it applies | the distribution | cost |
+| route | available for | the distribution | cost |
 |:---|:---|:---|:---|
-| [§3.2.1](@ref "3.2.1 Exact, no ties") | ``T([x; y]) = 0`` | exact, by a lattice recursion | ``O\bigl((n_x n_y)^2\bigr)`` |
-| [§3.2.2](@ref "3.2.2 Exact, ties present") | ``T([x; y]) > 0`` | exact, by enumerating the ``B`` assignments | ``O(B)`` |
+| [§3.2.1](@ref "3.2.1 Exact, no ties") | untied pooled samples only, ``T([x; y]) = 0`` | exact, by a lattice recursion | ``O\bigl((n_x n_y)^2\bigr)`` |
+| [§3.2.2](@ref "3.2.2 Exact, ties present") | any sample, and the only exact route once ``T([x; y]) > 0`` | exact, by enumerating the ``B`` assignments | ``O(B)`` |
 | [§3.2.3](@ref "3.2.3 Normal approximation") | any sample | normal, with the moments above | ``O(N)`` |
 
 **Choosing between them.** Exactly as in
-[§2.2](@ref "2.2 Null distribution of the signed rank statistic"): the tie pattern forces
-which exact route is available, and exact against approximate is a choice about cost.
+[§2.2](@ref "2.2 Null distribution of the signed rank statistic"): the tie pattern decides
+which exact route is available, and exact against approximate is a choice about cost, so an
+untied sample too large for the recursion still goes through
+[§3.2.3](@ref "3.2.3 Normal approximation").
 
 **In this package.** As in
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"), the constructor decides
