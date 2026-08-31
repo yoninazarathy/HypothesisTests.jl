@@ -390,7 +390,7 @@ number of non-zero differences are the only properties of the data that enter:
 | call | ``\lvert d \rvert`` untied | ``\lvert d \rvert`` tied |
 |:---|:---|:---|
 | `SignedRankTest(d)` | lattice for ``n \le 50``, normal above | permutation for ``n \le 15``, normal above |
-| `ExactSignedRankTest(d)` | lattice, at any size | permutation, up to ``n = 25`` |
+| `ExactSignedRankTest(d)` | lattice, up to ``m = 25\,000`` | permutation, up to ``n = 30`` |
 | `ApproximateSignedRankTest(d)` | normal | normal |
 
 Reading the first row: the normal approximation is what `SignedRankTest` falls back on when
@@ -409,8 +409,9 @@ directly does the same. A callable, passed `(; n, n_nonzero, ties, tie_adjustmen
 returning one of those two symbols, replaces the rule with one of the caller's own.
 
 Forcing the exact route on a large tied sample is declined rather than served slowly. Beyond
-[`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N) ``= 25`` non-zero
-differences, `pvalue` on a tied `ExactSignedRankTest` throws an `ArgumentError` naming ``n``
+[`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N) ``= 30`` non-zero
+differences, `pvalue` on a tied `ExactSignedRankTest` throws
+[`ComputationTooLarge`](@ref HypothesisTests.ComputationTooLarge) naming ``n``
 and pointing at `method = :approximate`, rather than starting an enumeration whose cost
 doubles with every further observation: at ``n = 40`` there would be
 ``2^{40} \approx 1.1 \times 10^{12}`` sign patterns, and the call would not return. The
@@ -821,7 +822,7 @@ pooled size are the only properties of the data that enter:
 | call | pooled sample untied | pooled sample tied |
 |:---|:---|:---|
 | `MannWhitneyUTest(x, y)` | lattice for ``N \le 50``, normal above | permutation for ``N \le 10``, normal above |
-| `ExactMannWhitneyUTest(x, y)` | lattice, at any size | permutation, up to ``B = 2^{25}`` |
+| `ExactMannWhitneyUTest(x, y)` | lattice, up to ``m = 25\,000`` | permutation, up to ``B = 2^{30}`` |
 | `ApproximateMannWhitneyUTest(x, y)` | normal | normal |
 
 Again the automatic rule turns to the normal approximation once the sample outgrows its exact
@@ -838,8 +839,11 @@ therefore turns to the approximation a good deal earlier than its own cost requi
 `method` overrides the rule as it does in
 [§2.2](@ref "2.2 Null distribution of the signed rank statistic"), the callable here being
 passed `(; nx, ny, ties, tie_adjustment)`. Forcing the exact route is declined the same way,
-here when ``B`` exceeds ``2^{25} = 33\,554\,432`` assignments: `pvalue` throws an
-`ArgumentError` naming ``n_x`` and ``n_y``, and `confint` is again unaffected.
+here when ``B`` exceeds ``2^{30} = 1\,073\,741\,824`` assignments: `pvalue` throws
+[`ComputationTooLarge`](@ref HypothesisTests.ComputationTooLarge) naming ``n_x`` and ``n_y``.
+This bound does not reach `confint`, which inverts the untied lattice whichever route the
+p-value took, but the exact interval carries a bound of its own: see
+[§9](@ref "9. The rank tests in this package").
 
 #### 3.2.1 The lattice distribution
 
@@ -1721,6 +1725,12 @@ routes are this package's own, and are bounded rather than corrected.
     [§3.2.2](@ref "3.2.2 The permutation distribution") are bounded by
     [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N), past which the
     p-value is refused rather than computed.
+  - Inverting the exact null distribution of [§6.3](@ref "6.3 Exact index") costs a lattice
+    recursion for every candidate endpoint considered, which the definition there does not
+    charge for. It is bounded separately, and far below the materialisation above, by
+    [`MAX_EXACT_CI_ESTIMATES`](@ref HypothesisTests.MAX_EXACT_CI_ESTIMATES): past that the
+    exact interval is refused, and the normal-approximation interval of
+    [§6.4](@ref "6.4 Normal-approximation index"), which inverts a closed form, is not.
   - Under ties an `Exact*` test enumerates for its p-value but inverts the untied lattice for
     its interval, so the two disagree about ties. That is the classical construction, and
     [§6.6](@ref "6.6 Zeros, ties, and degeneracy") says which way it errs.
