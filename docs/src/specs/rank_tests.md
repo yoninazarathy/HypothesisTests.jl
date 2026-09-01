@@ -390,7 +390,7 @@ number of non-zero differences are the only properties of the data that enter:
 | call | ``\lvert d \rvert`` untied | ``\lvert d \rvert`` tied |
 |:---|:---|:---|
 | `SignedRankTest(d)` | lattice for ``n \le 50``, normal above | permutation for ``n \le 15``, normal above |
-| `ExactSignedRankTest(d)` | lattice, up to ``m = 25\,000`` | permutation, up to ``n = 30`` |
+| `ExactSignedRankTest(d)` | lattice, up to ``m = 10^6`` | permutation, up to ``n = 30`` |
 | `ApproximateSignedRankTest(d)` | normal | normal |
 
 Reading the first row: the normal approximation is what `SignedRankTest` falls back on when
@@ -822,7 +822,7 @@ pooled size are the only properties of the data that enter:
 | call | pooled sample untied | pooled sample tied |
 |:---|:---|:---|
 | `MannWhitneyUTest(x, y)` | lattice for ``N \le 50``, normal above | permutation for ``N \le 10``, normal above |
-| `ExactMannWhitneyUTest(x, y)` | lattice, up to ``m = 25\,000`` | permutation, up to ``B = 2^{30}`` |
+| `ExactMannWhitneyUTest(x, y)` | lattice, up to ``m = 90\,000`` | permutation, up to ``B = 2^{30}`` |
 | `ApproximateMannWhitneyUTest(x, y)` | normal | normal |
 
 Again the automatic rule turns to the normal approximation once the sample outgrows its exact
@@ -1725,12 +1725,15 @@ routes are this package's own, and are bounded rather than corrected.
     [§3.2.2](@ref "3.2.2 The permutation distribution") are bounded by
     [`MAX_EXACT_ENUMERATION_N`](@ref HypothesisTests.MAX_EXACT_ENUMERATION_N), past which the
     p-value is refused rather than computed.
-  - Inverting the exact null distribution of [§6.3](@ref "6.3 Exact index") costs a lattice
-    recursion for every candidate endpoint considered, which the definition there does not
-    charge for. It is bounded separately, and far below the materialisation above, by
+  - Inverting the exact null distribution of [§6.3](@ref "6.3 Exact index") runs a lattice
+    recursion per bisection step, which the definition there does not charge for. The
+    two-sample recursion is the expensive one and is bounded separately, below the
+    materialisation above, by
     [`MAX_EXACT_CI_ESTIMATES`](@ref HypothesisTests.MAX_EXACT_CI_ESTIMATES): past that the
     exact interval is refused, and the normal-approximation interval of
-    [§6.4](@ref "6.4 Normal-approximation index"), which inverts a closed form, is not.
+    [§6.4](@ref "6.4 Normal-approximation index"), which inverts a closed form, is not. The
+    one-sample recursion is cheap enough that the materialisation bound is the only one its
+    exact interval meets.
   - Under ties an `Exact*` test enumerates for its p-value but inverts the untied lattice for
     its interval, so the two disagree about ties. That is the classical construction, and
     [§6.6](@ref "6.6 Zeros, ties, and degeneracy") says which way it errs.
