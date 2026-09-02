@@ -390,7 +390,7 @@ number of non-zero differences are the only properties of the data that enter:
 | call | ``\lvert d \rvert`` untied | ``\lvert d \rvert`` tied |
 |:---|:---|:---|
 | `SignedRankTest(d)` | lattice for ``n \le 50``, normal above | permutation for ``n \le 15``, normal above |
-| `ExactSignedRankTest(d)` | lattice, up to ``m = 10^6`` | permutation, up to ``n = 30`` |
+| `ExactSignedRankTest(d)` | lattice, no bound | permutation, up to ``n = 30`` |
 | `ApproximateSignedRankTest(d)` | normal | normal |
 
 Reading the first row: the normal approximation is what `SignedRankTest` falls back on when
@@ -421,7 +421,9 @@ that would remove it, proposed as
 [issue #370](https://github.com/JuliaStats/HypothesisTests.jl/issues/370). Only the
 p-value is affected. `confint` still returns an interval, since
 [§6.3](@ref "6.3 Exact index") inverts the lattice distribution whether or not the sample is
-tied.
+tied. Its own cost is bounded separately, as
+[§9](@ref "9. The rank tests in this package") sets out; the limits in the table above are
+on the p-value alone, and the untied lattice carries none.
 
 The interval follows the type rather than this rule: `Exact*` inverts the lattice
 distribution ([§6.3](@ref "6.3 Exact index")), tied sample or not, and `Approximate*` the
@@ -822,7 +824,7 @@ pooled size are the only properties of the data that enter:
 | call | pooled sample untied | pooled sample tied |
 |:---|:---|:---|
 | `MannWhitneyUTest(x, y)` | lattice for ``N \le 50``, normal above | permutation for ``N \le 10``, normal above |
-| `ExactMannWhitneyUTest(x, y)` | lattice, up to ``m = 90\,000`` | permutation, up to ``B = 2^{30}`` |
+| `ExactMannWhitneyUTest(x, y)` | lattice, no bound | permutation, up to ``B = 2^{30}`` |
 | `ApproximateMannWhitneyUTest(x, y)` | normal | normal |
 
 Again the automatic rule turns to the normal approximation once the sample outgrows its exact
@@ -1403,8 +1405,14 @@ exactly there is nothing to warn about: ``k = 0`` attains the request exactly, a
 
 Returning a short interval as though it met the request would misstate the coverage, so
 this package returns it and warns. On the exact route the warning names the coverage that
-is attainable, as R's does; for a one-sided bound it names the one-sided request and the
-one-sided attainable coverage ``1 - \mathbb{P}(W \le 0)``, since only one tail can miss.
+is attainable; for a one-sided bound it names the one-sided request and the one-sided
+attainable coverage ``1 - \mathbb{P}(W \le 0)``, since only one tail can miss.
+
+R is quieter here. It returns the same short interval with its `conf.level` attribute still
+claiming the level that was asked for, and warns, renaming that attribute to the coverage
+achieved, only once the shortfall exceeds ``\alpha/2``: silent at ``n = 5`` and
+``1-\alpha = 0.95``, warning at two observations against two, where the attribute becomes
+``2/3``.
 
 The approximate route warns for a related but weaker reason. Its index rule
 ([§6.4](@ref "6.4 Normal-approximation index")) can ask for an order statistic outside the
@@ -1437,8 +1445,9 @@ Three deliberate differences. The first two concern its approximate route:
     route, where [§6.6](@ref "6.6 Zeros, ties, and degeneracy") retains the classical
     construction instead.
 
-It also warns and substitutes a lower-coverage interval in the degenerate case of
-[§6.6](@ref "6.6 Zeros, ties, and degeneracy").
+It is also quieter in the degenerate case of
+[§6.6](@ref "6.6 Zeros, ties, and degeneracy"), where it substitutes a lower-coverage
+interval silently unless the shortfall exceeds ``\alpha/2``.
 
 Its route-selection rule differs too. R takes the exact route when the sample is under 50,
 each of the two for the rank sum test, and there are no ties, and for the signed rank test no
